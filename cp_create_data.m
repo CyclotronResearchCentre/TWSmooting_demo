@@ -1,7 +1,11 @@
-function out = cp_create_data
+function [P_signal, P_GmWmCsf,T_names] = cp_create_data
 % Function to create some synthetic 1D data:
 % - some "image" values, supposed to be like T1w or MT
 % - some tissue probabilities for GM, WM & CSF
+% 
+% OUTPUT:
+% P_signal  : signal profile, [1 x N] array
+% P_GmWmCsf : tissue probabilites profiles, [3 x N] array
 %__________________________________________________________________________
 % Copyright (C) 2019 GIGA Institute
 
@@ -41,8 +45,7 @@ end
 % add noise to tissue prob -> need to ensure p>0 and sum==1
 P_GmWmCsf = P_GmWmCsf + randn(size(P_GmWmCsf))*T_tcnoise;
 % minimum value should not be lower than .1%
-P_GmWmCsf(P_GmWmCsf<T_tcthresh) = T_tcthresh
-% P_GmWmCsf = P_GmWmCsf + ones(3,1)*min(P_GmWmCsf) + .1; 
+P_GmWmCsf(P_GmWmCsf<T_tcthresh) = T_tcthresh;
 % sum to 1
 P_GmWmCsf = P_GmWmCsf ./ (ones(3,1)*sum(P_GmWmCsf)) ; 
 
