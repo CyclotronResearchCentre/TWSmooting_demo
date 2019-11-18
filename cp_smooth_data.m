@@ -56,5 +56,18 @@ hold on
 plot(twsP_signal(1,:),'r')
 plot(twsP_signal(2,:),'c')
 
-% Explicit mask
+%% Explicit mask
+% majority and above 20%
 
+exMask = [  fP_GmWmCsf(1,:)>fP_GmWmCsf(2,:) & ...
+            fP_GmWmCsf(1,:)>fP_GmWmCsf(3,:) & ...
+            fP_GmWmCsf(1,:)>.2 ; ...
+            fP_GmWmCsf(2,:)>fP_GmWmCsf(1,:) & ...
+            fP_GmWmCsf(2,:)>fP_GmWmCsf(3,:) & ...
+            fP_GmWmCsf(2,:)>.2 ] ; 
+
+figure,
+plot(P_signal), 
+hold on
+plot(twsP_signal(1,:).*exMask(1,:),'r')
+plot(twsP_signal(2,:).*exMask(2,:),'c')
