@@ -1,73 +1,104 @@
-% function out = cp_smooth_data
-% %__________________________________________________________________________
-% % Copyright (C) 2019 GIGA Institute
-% 
-% % Written by C. Phillips, 2019.
-% % Cyclotron Research Centre, University of Liege, Belgium
+function [gP_signal,gP_GmWmCsf,twsP_signal,exMask]  = ...
+    cp_smooth_data(sm_kern,data,plot_fig)
+% Function to smooth the synthetic 1D data, using
+% - the standard Gaussian smoothing kernel
+% - the tissue weighted smoothing
+% also returning the explicit mask as defined for VBQ/hMRI analysis
+%
+% INPUT:
+% sm_kern  : smoothing kernel width [def. 8]
+% data     : structure with the input signal
+%   .P_signal  : (noisy) signal to smooth (a [1xN] array)
+%   .P_GmWmCsf : tissue probabilities for GM, WM & CSF (a [3xN] array)
+%   .T_names   : tissue classes name, only used for plotting
+% plot_fig : flag to plot or not some figures [def. 0 = no plot]
+%
+% OUTPUT:
+% gP_signal   : smoothed signal, using the usual Gaussian kernel
+% gP_GmWmCsf  : smoothed tissue probabilities for GM, WM & CSF)
+% twsP_signal : tissue-weighted smoothed signal, for GM & WM
+% exMask      : explicit mask, using majority and >20% for GM & WM
+%               Just for that single subject -> not group level!
+%__________________________________________________________________________
+% Copyright (C) 2019 GIGA Institute
+
+% Written by C. Phillips, 2019.
+% Cyclotron Research Centre, University of Liege, Belgium
 
 %% Some parameters
-sm_kern = 8; % smoothing kernel size
+if isempty(sm_kern)
+    sm_kern = 8; % smoothing kernel size
+end
+if nargin<3, plot_fig = 0; end
 
 %% Get the data
-[P_signal, P_GmWmCsf, T_names] = cp_create_data;
+P_signal  = data.P_signal;
+P_GmWmCsf = data.P_GmWmCsf;
+T_names   = data.T_names;
 
 %% Apply standard smoothing
 wg = gausswin(sm_kern);
 wg = wg/sum(wg); % normalize
 
-fP_signal = filtfilt(wg,1,P_signal);
-fP_GmWmCsf = filtfilt(wg,1,P_GmWmCsf')';
+gP_signal = filtfilt(wg,1,P_signal);
+gP_GmWmCsf = filtfilt(wg,1,P_GmWmCsf')';
 
 %% Plot all profiles
-figure,
-% display intensity profile
-subplot(2,1,1)
-plot(fP_signal)
-ylabel('Intensities')
-
-% display tissue probability profile
-for ii=1:3
-    subplot(6,1,3+ii)
-    plot(fP_GmWmCsf(ii,:))
-    ylabel(T_names{ii})
+if plot_fig
+    figure,
+    % display intensity profile
+    subplot(2,1,1)
+    plot(gP_signal)
+    ylabel('Intensities')
+    
+    % display tissue probability profile
+    for ii=1:3
+        subplot(6,1,3+ii)
+        plot(gP_GmWmCsf(ii,:))
+        ylabel(T_names{ii})
+    end
+    
+    % Plot orginal and G-smoothed signal
+    figure,
+    plot(P_signal), hold on
+    plot(gP_signal,'r')
 end
-
-% Plot orginal and G-smoothed signal
-figure,
-plot(P_signal), hold on
-plot(fP_signal,'r')
 
 %% Appli tissue-weighted smoothing
 
 % Appplying the smoothing as implemented for VBQ,
-% assuming the TPMs are like the twice smoothed tissue prob for simplicity.
+% assuming the TPMs are like the tissue probability but smoothed with a
+% kernel twice the size, for simplicity.
 for ii=1:2
     tmp1 = P_signal .* P_GmWmCsf(ii,:) .* ...
-        (filtfilt(wg,1,fP_GmWmCsf(ii,:))>.05); % Like the TPM masking
-    twsP_signal(ii,:) = filtfilt(wg,1,tmp1) ./ fP_GmWmCsf(ii,:) .* ...
-                    (fP_GmWmCsf(ii,:)>.05); % masking from smoothed tissue
+        (filtfilt(2*wg,1,P_GmWmCsf(ii,:))>.05); % Like the TPM masking
+    twsP_signal(ii,:) = filtfilt(wg,1,tmp1) ./ gP_GmWmCsf(ii,:) .* ...
+        (gP_GmWmCsf(ii,:)>.05); % masking from smoothed tissue %#ok<*AGROW>
 end
-%#ok<*SAGROW>
 
-
-figure,
-plot(P_signal), 
-hold on
-plot(twsP_signal(1,:),'r')
-plot(twsP_signal(2,:),'c')
+if plot_fig
+    figure,
+    plot(P_signal),
+    hold on
+    plot(twsP_signal(1,:),'r')
+    plot(twsP_signal(2,:),'c')
+end
 
 %% Explicit mask
 % majority and above 20%
+exMask = [  gP_GmWmCsf(1,:)>gP_GmWmCsf(2,:) & ...
+    gP_GmWmCsf(1,:)>gP_GmWmCsf(3,:) & ...
+    gP_GmWmCsf(1,:)>.2 ; ...
+    gP_GmWmCsf(2,:)>gP_GmWmCsf(1,:) & ...
+    gP_GmWmCsf(2,:)>gP_GmWmCsf(3,:) & ...
+    gP_GmWmCsf(2,:)>.2 ] ;
 
-exMask = [  fP_GmWmCsf(1,:)>fP_GmWmCsf(2,:) & ...
-            fP_GmWmCsf(1,:)>fP_GmWmCsf(3,:) & ...
-            fP_GmWmCsf(1,:)>.2 ; ...
-            fP_GmWmCsf(2,:)>fP_GmWmCsf(1,:) & ...
-            fP_GmWmCsf(2,:)>fP_GmWmCsf(3,:) & ...
-            fP_GmWmCsf(2,:)>.2 ] ; 
+if plot_fig
+    figure,
+    plot(P_signal),
+    hold on
+    plot(twsP_signal(1,:).*exMask(1,:),'r')
+    plot(twsP_signal(2,:).*exMask(2,:),'c')
+end
 
-figure,
-plot(P_signal), 
-hold on
-plot(twsP_signal(1,:).*exMask(1,:),'r')
-plot(twsP_signal(2,:).*exMask(2,:),'c')
+end
