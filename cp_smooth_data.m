@@ -1,5 +1,5 @@
 function [gP_signal,gP_GmWmCsf,twsP_signal,exMask]  = ...
-    cp_smooth_data(sm_kern,data,plot_fig)
+    cp_smooth_data(data,sm_kern,plot_fig)
 % Function to smooth the synthetic 1D data, using
 % - the standard Gaussian smoothing kernel
 % - the tissue weighted smoothing
@@ -9,14 +9,14 @@ function [gP_signal,gP_GmWmCsf,twsP_signal,exMask]  = ...
 % sm_kern  : smoothing kernel width [def. 8]
 % data     : structure with the input signal
 %   .P_signal  : (noisy) signal to smooth (a [1xN] array)
-%   .P_GmWmCsf : tissue probabilities for GM, WM & CSF (a [3xN] array)
+%   .P_GmWmCsf : tissue probabilities for GM, WM & CSF (a [3 x N] array)
 %   .T_names   : tissue classes name, only used for plotting
 % plot_fig : flag to plot or not some figures [def. 0 = no plot]
 %
 % OUTPUT:
-% gP_signal   : smoothed signal, using the usual Gaussian kernel
-% gP_GmWmCsf  : smoothed tissue probabilities for GM, WM & CSF)
-% twsP_signal : tissue-weighted smoothed signal, for GM & WM
+% gP_signal   : smoothed signal, with usual Gaussian kernel, [1 x N] array
+% gP_GmWmCsf  : smoothed tissue GM, WM & CSF probabilities, [3 x N] array
+% twsP_signal : tissue-weighted smoothed signal for GM & WM, [2 x N] array
 % exMask      : explicit mask, using majority and >20% for GM & WM
 %               Just for that single subject -> not group level!
 %__________________________________________________________________________
@@ -26,15 +26,18 @@ function [gP_signal,gP_GmWmCsf,twsP_signal,exMask]  = ...
 % Cyclotron Research Centre, University of Liege, Belgium
 
 %% Some parameters
-if isempty(sm_kern)
-    sm_kern = 8; % smoothing kernel size
-end
 if nargin<3, plot_fig = 0; end
+if nargin<2, sm_kern = []; end % -> use default
+if isempty(sm_kern)
+    sm_kern = 8; % default smoothing kernel size
+end
 
 %% Get the data
 P_signal  = data.P_signal;
 P_GmWmCsf = data.P_GmWmCsf;
-T_names   = data.T_names;
+if plot_fig
+    T_names   = data.T_names;
+end
 
 %% Apply standard smoothing
 wg = gausswin(sm_kern);
@@ -73,7 +76,7 @@ for ii=1:2
     tmp1 = P_signal .* P_GmWmCsf(ii,:) .* ...
         (filtfilt(2*wg,1,P_GmWmCsf(ii,:))>.05); % Like the TPM masking
     twsP_signal(ii,:) = filtfilt(wg,1,tmp1) ./ gP_GmWmCsf(ii,:) .* ...
-        (gP_GmWmCsf(ii,:)>.05); % masking from smoothed tissue %#ok<*AGROW>
+        (gP_GmWmCsf(ii,:)>.05); %#ok<*AGROW> % masking from smoothed tissue
 end
 
 if plot_fig
@@ -86,12 +89,7 @@ end
 
 %% Explicit mask
 % majority and above 20%
-exMask = [  gP_GmWmCsf(1,:)>gP_GmWmCsf(2,:) & ...
-    gP_GmWmCsf(1,:)>gP_GmWmCsf(3,:) & ...
-    gP_GmWmCsf(1,:)>.2 ; ...
-    gP_GmWmCsf(2,:)>gP_GmWmCsf(1,:) & ...
-    gP_GmWmCsf(2,:)>gP_GmWmCsf(3,:) & ...
-    gP_GmWmCsf(2,:)>.2 ] ;
+exMask = cp_explmask(gP_GmWmCsf);
 
 if plot_fig
     figure,
