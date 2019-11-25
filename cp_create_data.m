@@ -1,12 +1,13 @@
-function [P_signal, P_GmWmCsf,T_names] = cp_create_data(r_jitter,plot_fig)
+function [P_signal, P_GmWmCsf,T_names] = cp_create_data(r_jitter,T_noise, plot_fig)
 % Function to create some synthetic 1D data:
 % - some "image" values, supposed to be like T1w or MT
 % - some tissue probabilities for GM, WM & CSF
 %
 % INPUT:
-% r_jitter  : random jitter to add to the profile indexes, i.e. introducing
-%             some pseudo-anatomocal variability. [def. r_jitter=0]
-% plot_fig : flag to plot or not some figures [def. 0 = no plot]
+% r_jitter : random jitter to add to the profile indexes, i.e. introducing
+%            some pseudo-anatomocal variability. Def. r_jitter=0
+% T_noise  : noise variance for the signal. Def. T_noise = [2 2 10]
+% plot_fig : flag to plot or not some figures Def. 0 = no plot
 %
 % OUTPUT:
 % P_signal  : signal profile, [1 x N] array
@@ -18,13 +19,14 @@ function [P_signal, P_GmWmCsf,T_names] = cp_create_data(r_jitter,plot_fig)
 % Cyclotron Research Centre, University of Liege, Belgium
 
 %% Key parameters
-if nargin==0, r_jitter=0; end
-if nargin<2, plot_fig = 0; end
+if nargin<3, plot_fig = 0; end
+if nargin<2, T_noise  = [2 2 10]; end
+if nargin<0, r_jitter=0; end
+
 
 % for GM, WM & CSF respectively
 T_names  = {'GM', 'WM', 'CSF'};
 T_signal = [50 100 5];
-T_noise  = [2 2 10];
 T_Wsegm  = [32 16 24 26 24 8 12 8 12 4 32]; % width of tissue segments
 T_probGmWmCsf = [ ...
     1 98  2  2  2 95  5  2  5 98  1 ; ...
@@ -41,7 +43,6 @@ if r_jitter
     i_jitter(1) = 0; i_jitter(end) = 0; % not moving signal border
     T_index = T_index + i_jitter;
 end
-
 
 %% Creating data and tissue profiles
 P_GmWmCsf = zeros(3,max(T_index));
