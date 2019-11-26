@@ -6,7 +6,7 @@ After being warped into a common space, typically a group averaged in line with 
 
 With quantitative MRI, one is interested in the signal coming from the GM and/or the WM, standard Gaussian smoothing would therefore mix the signal coming from these 2 tissues classes, i.e. introducing some partial volume effect! One would therefore want to smooth the images "within each tissue class". Such an approach was introduced by Drangaski et al. (2011) as a specific way to smooth data in the case of "Voxel-Based Quantification" (VBQ) analysis. 
 
-Another technique is the "*t*issue-*s*pecific, sm*oo*thing-compe*n*sated" method, aka. T-SPOON, by Eun Lee et al.
+Another technique is the "*T*issue-*SP*ecific, sm*OO*thing-compe*N*sated" method, aka. T-SPOON, by Eun Lee et al. It is not considered here, at least for the moment...
 
 ## VBQ tissue-weighted smoothing
 For each tissue class of interest, typically GM and WM, the quantitative map is smoothed according to the tissue class *posterior* probability. Tissue-weighted smoothing is thus defined as follow:
@@ -52,11 +52,11 @@ To illustrate how classic and tissue-weighted smoothing affect the quantitative 
 
 Here are the characteristics of the simulated data,:
 
-- the profile contains segments of 3 tissue classes, say GM, WM, and CSF, with true intensity of 50, 100, and 5 resp.;
+- the profile contains segments of 3 tissue classes, say GM, WM, and CSF, with true intensity of 50, 100, and 5 resp., see the 1st figure here under;
 - some "anatomical variability" is introduced by randomly shifting the edge of all the segments of the profile by -1, 0 or +1;
 - each "tissue segment" has quite distinct probabilities, i.e.  $\geq 94\%$ or $\leq5\%$, but we always have $\geq 1\%$ and the total at each voxel $=100\%$;
 - the signal is constructed by summing over the 3 tissue classes the product of the tissue probability with their corresponding intensity, and adding some random noise of standard deviation 2, 2, 10 resp.;
-- some randomness is also added to the tissue class profiles but we still keep $\geq 1\%$ and the total at each voxel $=100\%$.
+- some randomness is also added to the tissue class profiles but we still keep $\geq 1\%$ and the total at each voxel $=100\%$, see last figure for their profile.
 
 There are therefore different sources of variability:
 
@@ -66,21 +66,40 @@ There are therefore different sources of variability:
 
 For each subject, 
 
-- the signal is smoothed using a (standard) Gaussian kernel and using the tissue-weighted method for the GM and WM.
-- the tissue probabilities are smoothed using the same Gaussian kernel
+- the signal is smoothed using a (standard) Gaussian kernel and using the tissue-weighted method for the GM and WM. The smoothing kernel with is 8 voxels.
+- the tissue probabilities are also smoothed using the same Gaussian kernel.
+- finally these signals, original and smoothed, and tissue probabilities are averaged.
 
-Then these signals, original and smoothed, and tissue probabilities are averaged.
+### Resulting profiles
 
-### Resulting plots
+1. Signal from the 20 subjects, thin lines, and the average signal intensity bold black line. The true underlying signal is represented by the dashed-grey line. From left to right, each segment contains the following tissue with width (vx): CSF (24), GM (24), WM(24), CSF (26), WM (24), GM (12), WM (8), CSF (12), WM (12), GM (6), CSF (26). Some segments are quite broader than the smoothing kernel (8) but others are of equivalent size (12 or 8) or even a bit smaller (6)
+<img src="demo_OriginalSignal.png" style="zoom: 150%;" />
 
-1. Top left, the signal from the 20 subjects, thin lines, and the mean signal intensity bold line.
-   One can see the variability in signal intensity and some "fussiness" close to the edges.
-2. Top right, the signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the Gaussian kernel.
-3. Bottom Left, the signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the tissue-weighted method.
+  One can see the variability in signal intensity and some "fussiness" close to the edges. Even when averaging the noisy signal from the 20 subjects, there remains some variability.
+  
+2. The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the Gaussian kernel.
+	<img src="demo_GsmoothedSignal.png" style="zoom: 150%;" />
+  One can see the mixing effect of standard Gaussian smoothing. The signal close to the edges (between tissue classes) is strongly affected and deviated from the true signal (dashed line).
+  
+3. The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the tissue-weighted method with, in blue, the GM and, in red, the WM tissue. 
+	<img src="demo_TWsmoothedSignal.png" style="zoom: 150%;" />
+  One can notice that the the signal is relatively homogeneously smoothed within each tissue class and only deviates slightly from the true signal very close to the edges (between tissue classes).
+  
+4. Tissue probabilities, with noise (top) and after Gaussian smoothing (bottom), with the explicit mask (bottom, dashed line) with, in blue, the GM and, in red, the WM tissue. .
+	<img src="demo_TissueProb.png" style="zoom: 150%;" />
+  This simply illustrates the fact that the tissue probabilities are also affected by the standard Gaussian smoothing, still the explicit mask ensures that the location of the underlying tissue classes is correctly recovered.
 
-![](TissueW_smoothing_demo.png)
+### Discussion
+
+With the tissue-weighted smoothing, the averaged smoothed signal within each explicitly mask tissue segment is very close to the original signal. Some deviation are visible close to the edges, especially for the small segments compared to the Gaussian kernel size, e.g. WM segments, of width 8 and 12, and GM segments, of size 6 and 12, on the right side of the profiles.
+
+With the standard smoothing tissue edges are completely erased and the signal mixed up between compartments.
+
 
 ## References
-- Draganski et al. (2011), https://doi.org/10.1016/j.neuroimage.2011.01.052
-- Callaghan et al. (20XY)
-- Eun Lee et al. (2009), "A study of diffusion tensor imaging by tissue-specific, smoothing-compensated voxel-based analysis" https://doi.org/10.1016/j.neuroimage.2008.09.041
+- Draganski et al. (2011), "Regional specificity of MRI contrast parameter changes in normal ageing revealed by voxel-based quantification (VBQ)."
+  https://doi.org/10.1016/j.neuroimage.2011.01.052
+- Callaghan et al. (2014), "Widespread age-related differences in the human brain microstructure revealed by quantitative magnetic resonance imaging."
+  https://doi.org/10.1016/j.neurobiolaging.2014.02.008
+- Eun Lee et al. (2009), "A study of diffusion tensor imaging by tissue-specific, smoothing-compensated voxel-based analysis."
+  https://doi.org/10.1016/j.neuroimage.2008.09.041
