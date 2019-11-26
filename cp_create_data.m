@@ -1,4 +1,5 @@
-function [P_signal, P_GmWmCsf,T_names] = cp_create_data(r_jitter,T_noise, plot_fig)
+function [P_signal, P_GmWmCsf,T_names] = ...
+    cp_create_data(r_jitter,T_noise, plot_fig)
 % Function to create some synthetic 1D data:
 % - some "image" values, supposed to be like T1w or MT
 % - some tissue probabilities for GM, WM & CSF
@@ -23,7 +24,6 @@ if nargin<3, plot_fig = 0; end
 if nargin<2, T_noise  = [2 2 10]; end
 if nargin<0, r_jitter=0; end
 
-
 % for GM, WM & CSF respectively
 T_names  = {'GM', 'WM', 'CSF'};
 T_signal = [50 100 5];
@@ -32,7 +32,7 @@ T_probGmWmCsf = [ ...
     1 98  2  2  2 95  5  2  5 98  1 ; ...
     1  1 97  2 97  2 94  4 94  1  1 ; ...
     98  1  1 96  1  3  1 95  1  1 98]; % tissue prob per segment
-T_tcnoise = 2; %error on tissue class probability
+T_tcnoise = 2; % error on tissue class probability
 T_tcthresh = .1; % minimum tissue class prob in % !
 
 T_index = cumsum([1 T_Wsegm]); % T_index(end) = T_index(end)+1;
