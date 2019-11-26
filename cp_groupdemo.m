@@ -50,7 +50,80 @@ end
 [cP_signal, cP_GmWmCsf, T_names] = cp_create_data(0,[0 0 0]); %#ok<*ASGLU>
 
 %% Check how the mean smoothed signal matches the original signal
-% Measure Root Mean Square Error, over each segment and overall.
+% Measure Root Mean Square Error, overall and over each segment based on 
+% explicit mask, for the G-smoothed and TW-smoothed signals, w.r.t. the
+% true noise-free signal
+
+% Deal with GM
+%-------------
+% All GM in explicit mask
+l_GMall = find(exMask(1,:));
+RMSE_GMall = sqrt([...
+    sum((cP_signal(l_GMall) - mean(P_signal(:,l_GMall))).^2) / ...
+        numel(l_GMall) ;
+    sum((cP_signal(l_GMall) - mean(gP_signal(:,l_GMall))).^2) / ...
+        numel(l_GMall) ;
+    sum((cP_signal(l_GMall) - mean(ttwsP_signal{1}(:,l_GMall))).^2) / ...
+        numel(l_GMall)]);
+% By segment
+l_end_segm = [0 find(diff(l_GMall)>1) numel(l_GMall)];
+Nsegm_GM = numel(l_end_segm)-1; % number of segmented
+Nel_GMSegm = diff(l_end_segm); % number of voxels/segm
+RMSE_GMsegm = zeros(2,Nsegm_GM);
+for ii=1:Nsegm_GM
+    l_ii = l_GMall(l_end_segm(ii)+1):l_GMall(l_end_segm(ii+1));
+    RMSE_GMsegm(1,ii) = sqrt( ...
+        sum((cP_signal(l_ii) - mean(P_signal(:,l_ii))).^2) / ...
+            Nel_GMSegm(ii) );
+    RMSE_GMsegm(2,ii) = sqrt( ...
+        sum((cP_signal(l_ii) - mean(gP_signal(:,l_ii))).^2) / ...
+            Nel_GMSegm(ii) );
+    RMSE_GMsegm(3,ii) = sqrt( ...
+        sum((cP_signal(l_ii) - mean(ttwsP_signal{1}(:,l_ii))).^2) / ...
+            Nel_GMSegm(ii) );
+end
+    
+% Deal with WM
+%-------------
+% All WM in explicit mask
+l_WMall = find(exMask(2,:));
+RMSE_WMall = sqrt([...
+    sum((cP_signal(l_WMall) - mean(P_signal(:,l_WMall))).^2) / ...
+        numel(l_WMall) ;
+    sum((cP_signal(l_WMall) - mean(gP_signal(:,l_WMall))).^2) / ...
+        numel(l_WMall) ;
+    sum((cP_signal(l_WMall) - mean(ttwsP_signal{2}(:,l_WMall))).^2) / ...
+        numel(l_WMall)]);
+% By segment
+l_end_segm = [0 find(diff(l_WMall)>1) numel(l_WMall)];
+Nsegm_WM =numel(l_end_segm)-1; % number of segmented
+Nel_WMSegm = diff(l_end_segm); % number of voxels/segm
+RMSE_WMsegm = zeros(2,Nsegm_WM);
+for ii=1:Nsegm_WM
+    l_ii = l_WMall(l_end_segm(ii)+1):l_WMall(l_end_segm(ii+1));
+    RMSE_WMsegm(1,ii) = sqrt( ...
+        sum((cP_signal(l_ii) - mean(P_signal(:,l_ii))).^2) / ...
+        Nel_WMSegm(ii) );
+    RMSE_WMsegm(2,ii) = sqrt( ...
+        sum((cP_signal(l_ii) - mean(gP_signal(:,l_ii))).^2) / ...
+        Nel_WMSegm(ii) );
+    RMSE_WMsegm(3,ii) = sqrt( ...
+        sum((cP_signal(l_ii) - mean(ttwsP_signal{2}(:,l_ii))).^2) / ...
+        Nel_WMSegm(ii) );
+end
+
+% Plot values
+% figure,
+% plot(Nel_GMSegm,RMSE_GMsegm,'bo',Nel_WMSegm,RMSE_WMsegm,'ro')
+
+% Print out some numbers
+fprintf('RMSE over the explicit mask for \n')
+fprintf('\tGM signal, no-sm %2.2f, G-sm %2.2f and TW-sm %2.2f\n',RMSE_GMall(1),RMSE_GMall(2),RMSE_GMall(3))
+fprintf('\tWM signal, no-sm %2.2f, G-sm %2.2f and TW-sm %2.2f\n',RMSE_WMall(1),RMSE_WMall(2),RMSE_WMall(3))
+fprintf('\n')
+fprintf('RMSE ratio\n')
+fprintf('\tGM, no-sm/TW-m %2.2f and G-sm/TW-m %2.2f\n',RMSE_GMall(1)/RMSE_GMall(3),RMSE_GMall(2)/RMSE_GMall(3))
+fprintf('\tWM, no-sm/TW-m %2.2f and G-sm/TW-m %2.2f\n',RMSE_WMall(1)/RMSE_WMall(3),RMSE_WMall(2)/RMSE_GMall(3))
 
 %% Plot things
 
