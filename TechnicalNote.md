@@ -76,17 +76,17 @@ For each subject,
 
 The Root Mean Square Error (RMSE) for GM and WM, over their respective explicit mask, is also calculated for the (mean noisy) signal smoothed with the standard Gaussian and the tissue-weighted method.
 
-<img src="https://latex.codecogs.com/gif.latex?\mbox{RMSE}_{TC}=\sqrt{\frac{\sum_{i\in\mbox{ExplMsk}_{TC}} (tS_i-sS_i)^2}{\mbox{ExplMsk}_{TC}}}" />
+<img src="https://latex.codecogs.com/gif.latex?\mbox{RMSE}_{TC}=\sqrt{\frac{\sum_{i\in\mbox{ExplMsk}_{TC}}(tS_i-sS_i)^2}{\|\mbox{ExplMsk}_{TC}\|}}" />
 
 where
 
 | Parameter          | Meaning                                      |
 | ------------------ | -------------------------------------------- |
-| $\mbox{RMSE}_{TC}$ | Root Mean Square Error for tissue class $TC$ |
-| $\mbox{ExplMsk}_{TC}$ | Explicit mask for tissue class $TC$ |
-| $tS_i$ | True signal at voxel $i$ |
-| $sS_i$ | Averaged (over 20 subjects) signal with/without smoothing at voxel $i$ |
-| $\#\mbox{ExplMsk}_{TC}$ | Number of voxels in explicit mask for tissue class $TC$ |
+| <img src="https://latex.codecogs.com/gif.latex?\mbox{RMSE}_{TC}" /> | Root Mean Square Error for tissue class <img src="https://latex.codecogs.com/gif.latex?TC" /> |
+| <img src="https://latex.codecogs.com/gif.latex?\mbox{ExplMsk}_{TC}" /> | Explicit mask for tissue class <img src="https://latex.codecogs.com/gif.latex?TC" /> |
+| <img src="https://latex.codecogs.com/gif.latex?tS_i" /> | True signal at voxel <img src="https://latex.codecogs.com/gif.latex?i" /> |
+| <img src="https://latex.codecogs.com/gif.latex?sS_i" /> | Averaged (over 20 subjects) signal with/without smoothing at voxel <img src="https://latex.codecogs.com/gif.latex?i" /> |
+| <img src="https://latex.codecogs.com/gif.latex?\|\mbox{ExplMsk}_{TC}\|" /> | Number of voxels in explicit mask for tissue class <img src="https://latex.codecogs.com/gif.latex?TC" /> |
 
 ## Results
 
