@@ -1,10 +1,12 @@
 function cp_groupdemo
 % Demo on synthetic 1D group data.
 % 1/ create data for Ns subjects
-% 2/ smooth them with classic Gaussian or tissue-weighted Gaussion
+% 2/ smooth them with classic Gaussian or tissue-weighted Gaussian
 % 3/ build explicit masks
 % 
 % Then show some results...
+% 
+% Q: should I consider the T-SPOON approach ?
 %__________________________________________________________________________
 % Copyright (C) 2019 GIGA Institute
 
@@ -22,9 +24,11 @@ ggP_GmWmCsf = cell(3,1);
 twsP_signal = cell(Ns,1);
 
 %% Do the processing
-% Create the signal + tissue probs for Ns subjects, then smooth
+% Deal with the Ns subjects, one at a time.
 for ii=Ns:-1:1
+    % Create the signal + tissue probs
     [P_signal(ii,:), P_GmWmCsf{ii}] = cp_create_data(r_jitter);
+    % Smooth the signals, Gaussian & tissue-weighted
     data_ii = struct('P_signal',P_signal(ii,:),'P_GmWmCsf',P_GmWmCsf{ii});
     [gP_signal(ii,:),gP_GmWmCsf{ii},twsP_signal{ii}] = ...
         cp_smooth_data(data_ii,8);
@@ -44,6 +48,9 @@ end
 
 % Create clean signal
 [cP_signal, cP_GmWmCsf, T_names] = cp_create_data(0,[0 0 0]);
+
+%% Check how the mean smoothed signal matches the original signal
+% Measure Root Mean Square Error, over each segment and overall.
 
 %% Plot things
 
