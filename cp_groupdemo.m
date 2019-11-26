@@ -47,7 +47,7 @@ end
 [exMask] = cp_explmask(ggP_GmWmCsf);
 
 % Create clean signal
-[cP_signal, cP_GmWmCsf, T_names] = cp_create_data(0,[0 0 0]);
+[cP_signal, cP_GmWmCsf, T_names] = cp_create_data(0,[0 0 0]); %#ok<*ASGLU>
 
 %% Check how the mean smoothed signal matches the original signal
 % Measure Root Mean Square Error, over each segment and overall.
@@ -55,25 +55,72 @@ end
 %% Plot things
 
 % Original signals, noisy and mean, + same but G-smoothed 
-figure,
+% Plot things, eiter into a single figure or multiple ones.
+% -> use sub-function for each (sub)plot !
 
+% 1/ Plot everything in a single figure
+figure,
 subplot(2,2,1)
+plot_Psignal(P_signal,cP_signal)
+subplot(2,2,2)
+plot_gPsignal(gP_signal,cP_signal)
+subplot(2,2,3)
+plot_twsPsignal(ttwsP_signal,exMask,cP_signal)
+subplot(4,2,6)
+plot_pPGmWmCsf(pP_GmWmCsf)
+subplot(4,2,8)
+plot_ggPGmWmCsf(ggP_GmWmCsf,exMask)
+set(gcf,'Position',[500 150 1600 1200])
+saveas(gcf,'TissueW_smoothing_demo.png');
+
+% 2/ Plot in different figures
+figure,
+plot_Psignal(P_signal,cP_signal)
+saveas(gcf,'demo_OriginalSignal.png');
+
+figure,
+plot_gPsignal(gP_signal,cP_signal)
+saveas(gcf,'demo_GsmoothedSignal.png');
+
+figure,
+plot_twsPsignal(ttwsP_signal,exMask,cP_signal)
+saveas(gcf,'demo_TWsmoothedSignal.png');
+
+figure,
+subplot(2,1,1)
+plot_pPGmWmCsf(pP_GmWmCsf)
+subplot(2,1,2)
+plot_ggPGmWmCsf(ggP_GmWmCsf,exMask)
+saveas(gcf,'demo_TissueProb.png');
+
+end
+%% PLOTTING FUNCTIONS
+
+function plot_Psignal(P_signal,cP_signal)
+
 plot(P_signal','LineWidth',.3,'Color',[.8 .8 1])
 hold on
 plot(mean(P_signal),'LineWidth',2,'Color',[.1 .1 .1])
 plot(cP_signal,'LineWidth',2,'Color',[.5 .5 .5],'LineStyle','--')
 title('Noisy signals, its mean (-), and true signal (--)')
 
-subplot(2,2,2)
+end
+
+function plot_gPsignal(gP_signal,cP_signal)
+
 plot(gP_signal','LineWidth',.3,'Color',[1 .8 .8])
 hold on
 plot(mean(gP_signal),'LineWidth',2,'Color',[.1 .1 .1])
 plot(cP_signal,'LineWidth',2,'Color',[.5 .5 .5],'LineStyle','--')
 title('Smoothed noisy signals, its mean (-), and true signal (--)')
 
-subplot(2,2,3)
-hold on
+end
+
+function plot_twsPsignal(ttwsP_signal,exMask,cP_signal)
+
+Ns = size(ttwsP_signal{1},1);
 plot(ttwsP_signal{1}'.*(exMask(1,:)'*ones(1,Ns)),'LineWidth',.3,'Color',[.8 .8 1])
+hold on
 plot(ttwsP_signal{2}'.*(exMask(2,:)'*ones(1,Ns)),'LineWidth',.3,'Color',[1 .8 .8])
 mM_ttws1P_signal = mean(ttwsP_signal{1}).*exMask(1,:); 
 mM_ttws1P_signal(mM_ttws1P_signal==0) = NaN;
@@ -86,7 +133,10 @@ plot(mM_ttws2P_signal,'LineWidth',2,'Color',[1 0 0],'LineStyle','-')
 plot(cP_signal,'LineWidth',2,'Color',[.2 .2 .2],'LineStyle','--')
 title('Tissue-w. smoothed noisy signals, its mean (-), and true signal (--)')
 
-subplot(4,2,6)
+end
+
+function plot_pPGmWmCsf(pP_GmWmCsf)
+
 plot(pP_GmWmCsf{1}','LineWidth',.3,'Color',[.8 .8 1])
 hold on
 plot(mean(pP_GmWmCsf{1}),'LineWidth',2,'Color',[0 0 1])
@@ -94,18 +144,73 @@ plot(pP_GmWmCsf{2}','LineWidth',.3,'Color',[1 .8 .8])
 plot(mean(pP_GmWmCsf{2}),'LineWidth',2,'Color',[1 0 0])
 title('Noisy tissue probabilities and their mean (-)')
 
-subplot(4,2,8)
+end
+
+function plot_ggPGmWmCsf(ggP_GmWmCsf,exMask)
+
 plot(ggP_GmWmCsf{1}','LineWidth',.3,'Color',[.8 .8 1])
 hold on
 plot(mean(ggP_GmWmCsf{1}),'LineWidth',2,'Color',[0 0 1])
 plot(ggP_GmWmCsf{2}','LineWidth',.3,'Color',[1 .8 .8])
 plot(mean(ggP_GmWmCsf{2}),'LineWidth',2,'Color',[1 0 0])
-plot(exMask(1,:),'LineWidth',2,'Color',[.1 .1 .1],'LineStyle','--')
-plot(exMask(2,:),'LineWidth',2,'Color',[.1 .1 .1],'LineStyle','--')
+plot(exMask(1,:),'LineWidth',2,'Color',[0 0 .5],'LineStyle','--')
+plot(exMask(2,:),'LineWidth',2,'Color',[.5 0 0],'LineStyle','--')
 title('Smoothed noisy tissue prob, their mean (-), and explicit mask (--)')
 
-set(gcf,'Position',[500 150 1600 1200])
+end
 
+%% SOME OLD STUFF TO KEEP AT HAND...
+
+% figure,
+% 
+% subplot(2,2,1)
+% plot(P_signal','LineWidth',.3,'Color',[.8 .8 1])
+% hold on
+% plot(mean(P_signal),'LineWidth',2,'Color',[.1 .1 .1])
+% plot(cP_signal,'LineWidth',2,'Color',[.5 .5 .5],'LineStyle','--')
+% title('Noisy signals, its mean (-), and true signal (--)')
+% 
+% subplot(2,2,2)
+% plot(gP_signal','LineWidth',.3,'Color',[1 .8 .8])
+% hold on
+% plot(mean(gP_signal),'LineWidth',2,'Color',[.1 .1 .1])
+% plot(cP_signal,'LineWidth',2,'Color',[.5 .5 .5],'LineStyle','--')
+% title('Smoothed noisy signals, its mean (-), and true signal (--)')
+% 
+% subplot(2,2,3)
+% hold on
+% plot(ttwsP_signal{1}'.*(exMask(1,:)'*ones(1,Ns)),'LineWidth',.3,'Color',[.8 .8 1])
+% plot(ttwsP_signal{2}'.*(exMask(2,:)'*ones(1,Ns)),'LineWidth',.3,'Color',[1 .8 .8])
+% mM_ttws1P_signal = mean(ttwsP_signal{1}).*exMask(1,:); 
+% mM_ttws1P_signal(mM_ttws1P_signal==0) = NaN;
+% mM_ttws2P_signal = mean(ttwsP_signal{2}).*exMask(2,:); 
+% mM_ttws2P_signal(mM_ttws2P_signal==0) = NaN;
+% plot(mM_ttws1P_signal,'LineWidth',2,'Color',[0 0 1],'LineStyle','-')
+% plot(mM_ttws2P_signal,'LineWidth',2,'Color',[1 0 0],'LineStyle','-')
+% % plot(mean(ttwsP_signal{1}).*exMask(1,:),'LineWidth',2,'Color',[.1 .1 .1])
+% % plot(mean(ttwsP_signal{2}).*exMask(2,:),'LineWidth',2,'Color',[.1 .1 .1])
+% plot(cP_signal,'LineWidth',2,'Color',[.2 .2 .2],'LineStyle','--')
+% title('Tissue-w. smoothed noisy signals, its mean (-), and true signal (--)')
+% 
+% subplot(4,2,6)
+% plot(pP_GmWmCsf{1}','LineWidth',.3,'Color',[.8 .8 1])
+% hold on
+% plot(mean(pP_GmWmCsf{1}),'LineWidth',2,'Color',[0 0 1])
+% plot(pP_GmWmCsf{2}','LineWidth',.3,'Color',[1 .8 .8])
+% plot(mean(pP_GmWmCsf{2}),'LineWidth',2,'Color',[1 0 0])
+% title('Noisy tissue probabilities and their mean (-)')
+% 
+% subplot(4,2,8)
+% plot(ggP_GmWmCsf{1}','LineWidth',.3,'Color',[.8 .8 1])
+% hold on
+% plot(mean(ggP_GmWmCsf{1}),'LineWidth',2,'Color',[0 0 1])
+% plot(ggP_GmWmCsf{2}','LineWidth',.3,'Color',[1 .8 .8])
+% plot(mean(ggP_GmWmCsf{2}),'LineWidth',2,'Color',[1 0 0])
+% plot(exMask(1,:),'LineWidth',2,'Color',[.1 .1 .1],'LineStyle','--')
+% plot(exMask(2,:),'LineWidth',2,'Color',[.1 .1 .1],'LineStyle','--')
+% title('Smoothed noisy tissue prob, their mean (-), and explicit mask (--)')
+% 
+% set(gcf,'Position',[500 150 1600 1200])
 
 % 
 % % Original signals, noisy and mean, + same but G-smoothed 
@@ -138,4 +243,3 @@ set(gcf,'Position',[500 150 1600 1200])
 % title('TW-smoothed noisy signals, its mean (-), and true signal (--)')
 % set(gcf,'Position',[1000 150 800 1200])
 
-end
