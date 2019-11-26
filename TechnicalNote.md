@@ -11,7 +11,7 @@ Another technique is the "*T*issue-*SP*ecific, sm*OO*thing-compe*N*sated" method
 ## VBQ tissue-weighted smoothing
 For each tissue class of interest, typically GM and WM, the quantitative map is smoothed according to the tissue class *posterior* probability. Tissue-weighted smoothing is thus defined as follow:
 
-<img src="https://latex.codecogs.com/gif.latex?p_j = [g*(w_j s_j)]./[g*w_j]\:m_{\tiny \mbox{TPM}}\:m_j" />
+<img src="https://latex.codecogs.com/gif.latex?p_j=[g*(w_js_j)]./[g*w_j]\:m_{\tiny\mbox{TPM}}\:m_j" />
 
 where:
 
@@ -20,17 +20,17 @@ where:
 | <img src="https://latex.codecogs.com/gif.latex?p_j" /> | Quantitative map for subject <img src="https://latex.codecogs.com/gif.latex?j" /> after tissue-weighted smoothing |
 | <img src="https://latex.codecogs.com/gif.latex?s_j" /> | Participant-specific quantitative map warped to group space by deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> |
 | <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> | Participant-specific deformation mapping from native to group space |
-| <img src="https://latex.codecogs.com/gif.latex?w_j" /> | Participant-specific weights given by <img src="https://latex.codecogs.com/gif.latex?J_j t_j" />          |
+| <img src="https://latex.codecogs.com/gif.latex?w_j" /> | Participant-specific weights given by <img src="https://latex.codecogs.com/gif.latex?J_jt_j" />          |
 | <img src="https://latex.codecogs.com/gif.latex?J_j" /> | Jacobian determinants of deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" />              |
 | <img src="https://latex.codecogs.com/gif.latex?t_j" /> | Participant-specific tissue *posterior* probability map warped by deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> |
 | <img src="https://latex.codecogs.com/gif.latex?g*" /> | Convolution by a Gaussian smoothing kernel, i.e. Gaussian smoothing. |
-| <img src="https://latex.codecogs.com/gif.latex?m_{\tiny \mbox{TPM}}" /> | TPM-specific mask identifying voxels with probability > 5%   |
-| <img src="https://latex.codecogs.com/gif.latex?m_j" /> | Participant-specific mask defined as <img src="https://latex.codecogs.com/gif.latex?g*w_j > 5\%" /> |
+| <img src="https://latex.codecogs.com/gif.latex?m_{\tiny\mbox{TPM}}" /> | TPM-specific mask identifying voxels with probability > 5%   |
+| <img src="https://latex.codecogs.com/gif.latex?m_j" /> | Participant-specific mask defined as <img src="https://latex.codecogs.com/gif.latex?g*w_j>5\%" /> |
 | <img src="https://latex.codecogs.com/gif.latex?./" /> | Ratio applied voxel by voxel over the smoothed images |
 
 The point of the 2 masks is to ensure only voxels with sufficient 
 
-- *a priori* probability (<img src="https://latex.codecogs.com/gif.latex?m_{\tiny \mbox{TPM}}" />) of being of the tissue class of interest, i.e. keeping voxels that are where they are supposed to be, and 
+- *a priori* probability (<img src="https://latex.codecogs.com/gif.latex?m_{\tiny\mbox{TPM}}" />) of being of the tissue class of interest, i.e. keeping voxels that are where they are supposed to be, and 
 - *a posteriori* probability (<img src="https://latex.codecogs.com/gif.latex?m_j" />) of being of the tissue class of interest, i.e. masking out voxels that are unlikely to be of the class of interest 
 
 A further explicit mask should be defined at the group level for the statistical analysis.
