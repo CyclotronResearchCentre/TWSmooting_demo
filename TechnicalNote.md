@@ -101,11 +101,11 @@ where
 	<img src="demo_GsmoothedSignal.png" style="zoom: 150%;" />
   One can see the mixing effect of standard Gaussian smoothing. The signal close to the edges (between tissue classes) is strongly affected and deviated from the true signal (dashed line).
   
-- The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the tissue-weighted method with, in blue, the GM and, in red, the WM tissue. 
+- The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the tissue-weighted method with, in blue, the GM and, in red, the WM tissue, after explicit masking (for GM and WM). 
 	<img src="demo_TWsmoothedSignal.png" style="zoom: 150%;" />
   One can notice that the the signal is relatively homogeneously smoothed within each tissue class and only deviates slightly from the true signal very close to the edges (between tissue classes).
   
-- Tissue probabilities, with noise (top) and after Gaussian smoothing (bottom), with the explicit mask (bottom, dashed line) with, in blue, the GM and, in red, the WM tissue. .
+- Tissue probabilities, with noise (top) and after Gaussian smoothing (bottom), with the corresponding explicit mask (bottom, dashed line) with, in blue, the GM and, in red, the WM tissue. .
 	<img src="demo_TissueProb.png" style="zoom: 150%;" />
   This simply illustrates the fact that the tissue probabilities are also affected by the standard Gaussian smoothing, still the explicit mask ensures that the location of the underlying tissue classes is correctly recovered.
 
