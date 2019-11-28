@@ -90,33 +90,29 @@ where
 
 ## Results
 
-### Signal and tissue class profiles
-
 - Signal from the 20 subjects, thin lines, and the average signal intensity bold black line. The true underlying signal is represented by the dashed-grey line. From left to right, each segment contains the following tissue with width (vx): CSF (24), GM (24), WM(24), CSF (26), WM (24), GM (12), WM (8), CSF (12), WM (12), GM (6), CSF (26). Some segments are quite broader than the smoothing kernel (8) but others are of equivalent size (12 or 8) or even a bit smaller (6)
 <img src="demo_OriginalSignal.png" style="zoom: 150%;" />
 
   One can see the variability in signal intensity and some "fussiness" close to the edges. Even when averaging the noisy signal from the 20 subjects, there remains some variability.
   
-- The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the Gaussian kernel.
-	<img src="demo_GsmoothedSignal.png" style="zoom: 150%;" />
-  One can see the mixing effect of standard Gaussian smoothing. The signal close to the edges (between tissue classes) is strongly affected and deviated from the true signal (dashed line).
-  
-- The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the tissue-weighted method with, in blue, the GM and, in red, the WM tissue, after explicit masking (for GM and WM). 
-	<img src="demo_TWsmoothedSignal.png" style="zoom: 150%;" />
-  One can notice that the the signal is relatively homogeneously smoothed within each tissue class and only deviates slightly from the true signal very close to the edges (between tissue classes).
-  
 - Tissue probabilities, with noise (top) and after Gaussian smoothing (bottom), with the corresponding explicit mask (bottom, dashed line) with, in blue, the GM and, in red, the WM tissue. .
 	<img src="demo_TissueProb.png" style="zoom: 150%;" />
   This simply illustrates the fact that the tissue probabilities are also affected by the standard Gaussian smoothing, still the explicit mask ensures that the location of the underlying tissue classes is correctly recovered.
 
-### Root mean square error
+- The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the Gaussian kernel.
+	<img src="demo_GsmoothedSignal.png" style="zoom: 150%;" />
+  One can see the mixing effect of standard Gaussian smoothing. The signal close to the edges (between tissue classes) is strongly affected and deviated from the true signal (dashed line).
+- The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the tissue-weighted method with, in blue, the GM and, in red, the WM tissue, after explicit masking (for GM and WM). 
+	<img src="demo_TWsmoothedSignal.png" style="zoom: 150%;" />
+  One can notice that the the signal is relatively homogeneously smoothed within each tissue class and only deviates slightly from the true signal very close to the edges (between tissue classes). See here under for a zoom in on each tissue segment.
+- Zoom in on the true and average signals over the explicit mask segments, for GM (top) and WM (bottom). The RMSE for the signal without smoothing, with Gaussian smoothing, and tissue-weighted smoothing is also calculated.
+	<img src="demo_RMSE_segments.png" style="zoom: 1O0%;" />
+  Quite obviously, averaging the noisy signal over 20 subjects irons out the signal over the middle part of the segments. Specifically
+    - Without smoothing (blue line), the signal deviates on the segment extremities, 1 or 2 voxels at most, because of the anatomical variance introduces. 
+    - When applying Gaussian smoothing (red line), the signal os a bit smooter in the middle part but deviates largely close to the edges. This is due to the "partial volume effect", i.e. signal from different tissue classes are mixed up. WM signal is always dragged down because both adjacent GM and CSF tissues have lower intensities (100 versus 50 and 5), while the GM signal is dragged up by adjacent WM (50 vs 100) or down by adjacent CSF (50 vs5). 
+    - On the contrary, the signal after tissue-weighted smoothing (green light) is smooth and remains flat **over the whole tissue segment**.
 
-RMSE for the 2 tissue classes, over their explicit mask, and for the Gaussian and tissue-weighted (TW) smoothing.
-
-|   | No smoothing | Gaussian smoothing | TW smoothing | Ratio of <br />no-sm/TW-sm | Ratio of <br />G-sm/TW-sm |
-| --- | --- | --- | --- | --- | --- |
-| **GM** | 6.56 | 8.49 | 0.58 | 11.41 | 14.77 |
-| **WM** | 7.57 | 11.20 | 0.61 | 12.57 | 19.47 |
+  The RMSE values reflects these observations with a large value for the signal without smoothing (large-ish RMSE), after Gaussian smoothing (even largerRMSE), and after tissue-weighted smoothing (tiny RMSE) . 
 
 
 ## Discussion
@@ -128,7 +124,7 @@ The RMSE using the tissue-weighted smoothing and explicit masking is very small,
 
 ## Conclusion
 
-Tissue-weighted smoothing does make a huge difference, compared to Gaussian smoothing: the signal over the explicit mask is very close to the true underlying signal. 
+Tissue-weighted smoothing does make a huge difference, compared to Gaussian smoothing, and the resulting signal over the explicit mask segment is very close to the true underlying signal. 
 
 At least this is the case in this simple simulation.
 
