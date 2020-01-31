@@ -109,18 +109,19 @@ where
 - Zoom in on the true and average signals over the explicit mask segments, for GM (top) and WM (bottom). The RMSE for the signal without smoothing, with Gaussian smoothing, and tissue-weighted smoothing is also calculated.
 	<img src="demo_RMSE_segments.png" style="zoom: 1O0%;" />
   Quite obviously, averaging the noisy signal over 20 subjects irons out the signal over the middle part of the segments. Specifically
-    - Without smoothing (blue line), the signal deviates on the segment extremities, 1 or 2 voxels at most, because of the anatomical variance introduces. 
-    - When applying Gaussian smoothing (red line), the signal os a bit smooter in the middle part but deviates largely close to the edges. This is due to the "partial volume effect", i.e. signal from different tissue classes are mixed up. WM signal is always dragged down because both adjacent GM and CSF tissues have lower intensities (100 versus 50 and 5), while the GM signal is dragged up by adjacent WM (50 vs 100) or down by adjacent CSF (50 vs5). 
-    - On the contrary, the signal after tissue-weighted smoothing (green light) is smooth and remains flat **over the whole tissue segment**.
+    - Without smoothing (blue line), the signal deviates on the segment extremities, 1 or 2 voxels at most, because of the anatomical variance introduced. 
+    - When applying Gaussian smoothing (red line), the signal is a bit smoother in the middle part of each tissue segment but deviates largely close to the edges. This is due to the "partial volume effect", i.e. signal from different tissue classes are mixed up. WM signal is always dragged down because both adjacent GM and CSF tissues have lower intensities (100 versus 50 and 5), while the GM signal is dragged up by adjacent WM (50 vs 100) or down by adjacent CSF (50 vs5). 
+    - On the contrary, the signal after tissue-weighted smoothing (green line) is smooth and remains flat **over the whole tissue segment**.
 
-  The RMSE values reflects these observations with a large value for the signal without smoothing (large-ish RMSE), after Gaussian smoothing (even largerRMSE), and after tissue-weighted smoothing (tiny RMSE) . 
+  The RMSE values reflects these observations with a large value for the signal without smoothing (large-ish RMSE), after Gaussian smoothing (even larger RMSE), and after tissue-weighted smoothing (tiny RMSE) . 
 
 
 ## Discussion
 
-With the tissue-weighted smoothing, the averaged smoothed signal within each explicitly mask tissue segment is very close to the original signal. Some deviation are visible close to the edges, especially for the small segments compared to the Gaussian kernel size, e.g. WM segments, of width 8 and 12, and GM segments, of size 6 and 12, on the right side of the profiles. With the standard smoothing tissue edges are completely erased and the signal mixed up between compartments.
+With the tissue-weighted smoothing, the averaged smoothed signal within each explicitly mask tissue segment is very close to the original signal. Some deviations are visible close to the edges, especially for the small segments w.r.t. the Gaussian kernel size, e.g. WM segments, of width 8 and 12, and GM segments, of size 6 and 12, on the right side of the profiles. 
+With the standard smoothing tissue edges are completely erased and the signal mixed up between compartments.
 
-The RMSEof the averaged noisy signal (over the 20 subjects) without smoothing is a measure of the remaining noise and the aim of the smoothing is to reduce that noise.
+The RMSE of the averaged noisy signal (over the 20 subjects) without smoothing is a measure of the remaining noise and the aim of the smoothing is to reduce that noise.
 The RMSE using the tissue-weighted smoothing and explicit masking is very small, compared to the true signal intensity (50 and 100 for GM and WM respectively) and that of signal without smoothing. On the contrary, with the standard Gaussian smoothing, the RMSE is much larger, about 14 to 20 times larger, and increased compared to without smoothing !
 
 ## Conclusion
