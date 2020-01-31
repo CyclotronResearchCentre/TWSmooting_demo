@@ -92,7 +92,6 @@ where
 
 - Signal from the 20 subjects, thin lines, and the average signal intensity bold black line. The true underlying signal is represented by the dashed-grey line. From left to right, each segment contains the following tissue with width (vx): CSF (24), GM (24), WM(24), CSF (26), WM (24), GM (12), WM (8), CSF (12), WM (12), GM (6), CSF (26). Some segments are quite broader than the smoothing kernel (8) but others are of equivalent size (12 or 8) or even a bit smaller (6)
 <img src="demo_OriginalSignal.png" style="zoom: 150%;" />
-
   One can see the variability in signal intensity and some "fussiness" close to the edges. Even when averaging the noisy signal from the 20 subjects, there remains some variability.
   
 - Tissue probabilities, with noise (top) and after Gaussian smoothing (bottom), with the corresponding explicit mask (bottom, dashed line) with, in blue, the GM and, in red, the WM tissue. .
@@ -101,10 +100,12 @@ where
 
 - The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the Gaussian kernel.
 	<img src="demo_GsmoothedSignal.png" style="zoom: 150%;" />
-  One can see the mixing effect of standard Gaussian smoothing. The signal close to the edges (between tissue classes) is strongly affected and deviated from the true signal (dashed line).
+  One can see the mixing effect of standard Gaussian smoothing. The signal close to the edges (between tissue classes) is strongly affected and deviates from the true signal (dashed line).
+  
 - The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the tissue-weighted method with, in blue, the GM and, in red, the WM tissue, after explicit masking (for GM and WM). 
 	<img src="demo_TWsmoothedSignal.png" style="zoom: 150%;" />
   One can notice that the the signal is relatively homogeneously smoothed within each tissue class and only deviates slightly from the true signal very close to the edges (between tissue classes). See here under for a zoom in on each tissue segment.
+  
 - Zoom in on the true and average signals over the explicit mask segments, for GM (top) and WM (bottom). The RMSE for the signal without smoothing, with Gaussian smoothing, and tissue-weighted smoothing is also calculated.
 	<img src="demo_RMSE_segments.png" style="zoom: 1O0%;" />
   Quite obviously, averaging the noisy signal over 20 subjects irons out the signal over the middle part of the segments. Specifically
