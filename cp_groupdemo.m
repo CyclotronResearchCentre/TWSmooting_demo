@@ -7,6 +7,7 @@ function cp_groupdemo
 % Then show some results...
 %
 % Q: should I consider the T-SPOON approach ?
+% -> for the sake of completeness, yes!
 %__________________________________________________________________________
 % Copyright (C) 2019 GIGA Institute
 
