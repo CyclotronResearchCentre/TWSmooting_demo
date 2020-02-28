@@ -11,7 +11,7 @@ Another technique is the "*T*issue-*SP*ecific, sm*OO*thing-compe*N*sated" method
 ## VBQ tissue-weighted smoothing
 For each tissue class of interest, typically GM and WM, the quantitative map is smoothed according to the tissue class *posterior* probability. Tissue-weighted smoothing is thus defined as follow:
 
-<img src="https://latex.codecogs.com/gif.latex?p_j=[g*(w_js_j)]./[g*w_j]\:m_{\tiny\mbox{TPM}}\:m_j" />
+<img src="https://latex.codecogs.com/gif.latex?p_j=\frac{g*(w_js_j)}{g*w_j}\:m_{\tiny\mbox{TPM}}\:m_j" />
 
 where:
 
@@ -20,13 +20,13 @@ where:
 | <img src="https://latex.codecogs.com/gif.latex?p_j" /> | Quantitative map for subject <img src="https://latex.codecogs.com/gif.latex?j" /> after tissue-weighted smoothing |
 | <img src="https://latex.codecogs.com/gif.latex?s_j" /> | Participant-specific quantitative map warped to group space by deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> |
 | <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> | Participant-specific deformation mapping from native to group space |
-| <img src="https://latex.codecogs.com/gif.latex?w_j" /> | Participant-specific weights given by <img src="https://latex.codecogs.com/gif.latex?J_jt_j" />          |
-| <img src="https://latex.codecogs.com/gif.latex?J_j" /> | Jacobian determinants of deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" />              |
+| <img src="https://latex.codecogs.com/gif.latex?w_j" /> | Participant-specific tissue weights given by <img src="https://latex.codecogs.com/gif.latex?\|J_j\| t_j" /> |
+| <img src="https://latex.codecogs.com/gif.latex?\|J_j\|" /> | Jacobian determinants of deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" />              |
 | <img src="https://latex.codecogs.com/gif.latex?t_j" /> | Participant-specific tissue *posterior* probability map warped by deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> |
 | <img src="https://latex.codecogs.com/gif.latex?g*" /> | Convolution by a Gaussian smoothing kernel, i.e. Gaussian smoothing. |
 | <img src="https://latex.codecogs.com/gif.latex?m_{\tiny\mbox{TPM}}" /> | TPM-specific mask identifying voxels with probability > 5%   |
 | <img src="https://latex.codecogs.com/gif.latex?m_j" /> | Participant-specific mask defined as <img src="https://latex.codecogs.com/gif.latex?g*w_j>5\%" /> |
-| <img src="https://latex.codecogs.com/gif.latex?./" /> | Ratio applied voxel by voxel over the smoothed images |
+| <img src="https://latex.codecogs.com/gif.latex?./." /> | Ratio applied voxel by voxel over the images |
 
 The point of the 2 masks is to ensure only voxels with sufficient 
 
@@ -50,13 +50,13 @@ To illustrate how classic and tissue-weighted smoothing affect the quantitative 
 
 ### Data generation
 
-Here are the characteristics of the simulated data,:
+Here are the characteristics of the simulated data for each of the 20 subjects:
 
 - the profile contains segments of 3 tissue classes, say GM, WM, and CSF, with true intensity of 50, 100, and 5 resp., see the 1st figure here under;
 - some "anatomical variability" is introduced by randomly shifting the edge of all the segments of the profile by -1, 0 or +1;
-- each "tissue segment" has quite distinct probabilities, i.e.  >94% or <5%, but we always have >1% and the total at each voxel =100%;
-- the signal is constructed by summing over the 3 tissue classes the product of the tissue probability with their corresponding intensity, and adding some random noise of standard deviation 2, 2, 10 resp.;
-- some randomness is also added to the tissue class profiles but we still keep >1%$ and the total at each voxel =100%, see last figure for their profile.
+- each "tissue segment" has quite distinct probabilities, i.e.  >94% or <5%, but they are always  >1% and the total at each voxel =100%;
+- the signal is constructed by summing over the 3 tissue classes the product of the tissue probability with their corresponding intensity, and adding some random noise. The standard deviation of noise for the GM, WM, and CSF is 2, 2, 10 resp.;
+- some randomness is also added to the tissue class profiles but they  still remain >1% and the total at each voxel =100%, see last figure for their profile.
 
 There are therefore different sources of variability:
 
@@ -64,17 +64,24 @@ There are therefore different sources of variability:
 - intensity, with some added noise in the signal;
 - tissue class, with some added noise in the probability.
 
+One element is not considered here: the volume modulation by the Jacobian determinant of the spatial deformation. Here this term is assumed to be 1. Further simulation could lift this limitation and explicitly test for the effect of this weighting.
+
 ### Data smoothing & averaging
 
-For each subject, 
+ The width of the Gaussian smoothing kernel is set to 8 voxels. For each subject, 
 
-- the signal is smoothed using a (standard) Gaussian kernel and using the tissue-weighted method for the GM and WM. The smoothing kernel with is 8 voxels.
-- the tissue probabilities are also smoothed using the same Gaussian kernel.
-- finally these signals, original and smoothed, and tissue probabilities are averaged.
+- the tissue probabilities are smoothed using the same Gaussian kernel.
+- the signal is smoothed using a (standard) Gaussian kernel and using the (VBQ) tissue-weighted method for the GM and WM.
+
+Then these signals, original and smoothed, and tissue probabilities are averaged over subjects. These would thus represent the group mean (smoothed) signals and tissue probabilities.
 
 ### Discrepancy measurement
 
-The Root Mean Square Error (RMSE) for GM and WM, over their respective explicit mask, is also calculated for the (mean noisy) signal smoothed with the standard Gaussian and the tissue-weighted method.
+After averaging over the 20 subjects, one would expect that the resulting mean (smoothed) signals and tissue probabilities are close to the true underlying profile. The discrepancy is measured as the "Root Mean Square Error" (RMSE). This is calculated separately for the signal in the GM and WM, over their respective explicit mask, for the cases where 
+
+- no smoothing is applied; 
+- the signal is smoothed with the standard Gaussian and the tissue-weighted method.
+
 
 <img src="https://latex.codecogs.com/gif.latex?\mbox{RMSE}_{TC}=\sqrt{\frac{\sum_{i\in\mbox{ExplMsk}_{TC}}(tS_i-sS_i)^2}{\vert\mbox{ExplMsk}_{TC}\vert}}" />
 
