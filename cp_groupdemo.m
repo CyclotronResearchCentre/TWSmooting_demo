@@ -1,41 +1,85 @@
-function cp_groupdemo
+function cp_groupdemo(opt)
 % Demo on synthetic 1D group data.
-% 1/ create data for Ns subjects
-% 2/ smooth them with classic Gaussian or tissue-weighted Gaussian
-% 3/ build explicit masks
+% 0/ Options, parameters & signals
+% 1/ Processing
+%       - create data for Ns subjects
+%       - smooth them with classic Gaussian or tissue-weighted Gaussian
+%       - build explicit masks
+%       - create clean signal/tissue probs
+% 2/ Calculate match between smoothed signal and clean one
+% 3/ Plot the results
+% 
+% INPUT
+% opt   : optional parameters
+% .plot_all     , create the big figs with multi-plots (1) or not (0, def)
+% .create_data  , create the data (1) or try to load them (0, def)
+% .fn_data      , filename for saved data
 %
-% Then show some results...
-%
-% Q: should I consider the T-SPOON approach ?
-% -> for the sake of completeness, yes!
 %__________________________________________________________________________
 % Copyright (C) 2019 GIGA Institute
 
 % Written by C. Phillips, 2019.
 % Cyclotron Research Centre, University of Liege, Belgium
 
-%% flags
-plot_all = 0;
-% No need create the big fig with multiple plots
-create_data = 0;
-% if 0, then try to load pre-specified data!
-fn_data = 'TWSdata_demo.mat';
-if ~exist(fn_data,'file')
+% Q: should I consider the T-SPOON approach ?
+% -> for the sake of completeness, yes!
+
+%% 0/ Options
+% default options
+opt_def = struct(...
+    'plot_all', 0, ... % no big figs with multi-plots
+    'create_data', 0, ... % try 1st to load the data
+    'fn_data', 'TWSdata_demo.mat');
+
+% check options & defaults
+if nargin==0, opt = []; end
+[opt] = crc_check_flag(opt_def,opt);
+
+% get options
+plot_all = opt.plot_all;
+create_data = opt.create_data;
+fn_data = opt.fn_data;
+
+% check if data file exist
+if ~exist(fn_data,'file') && ~create_data
     fprintf('Can''t find the data file, creating some then!\n')
     create_data = 1;
 end
 
-%% Parameters
-% Number of subjects
-Ns = 20;
+% Parameters & Signals
+% --------------------
+Ns = 20; % Number of subjects
 r_jitter = 1;
-P_GmWmCsf = cell(Ns,1);
-pP_GmWmCsf = cell(3,1);
-gP_GmWmCsf = cell(Ns,1);
-ggP_GmWmCsf = cell(3,1);
-twsP_signal = cell(Ns,1);
+P_GmWmCsf    = cell(Ns,1);
+pP_GmWmCsf   = cell(3,1);
+gsP_GmWmCsf  = cell(Ns,1);
+ggsP_GmWmCsf = cell(3,1);
+twsP_signal  = cell(Ns,1);
+ttwsP_signal = cell(2,1);
 
-%% Do the processing
+% Signals
+% -------
+% Ns / Np     : number of subjects / number of 'pixels'
+% P_signal    : signal profiles of Ns subjects, [Ns x Np] array
+% P_GmWmCsf   : tissue probabilites profiles of Ns subjects, 
+%               {Ns x 1} cell array of [3 x Np] array
+% pP_GmWmCsf  : same as P_GmWmCsf but reorganized per tissue class, 
+%               as a {3 x 1} cell array of [Ns x Np] array
+% gsP_signal  : Gaussian smoothed signals of Ns subjects, [Ns x Np] array
+% gsP_GmWmCsf : Gaussian smoothed tissue GM, WM & CSF probabilities of 
+%               Ns subjects, {Ns x 1} cell array of [3 x Np] array
+% ggsP_GmWmCsf: same as gsP_GmWmCsf but reorganized per tissue class, 
+%               as a {3 x 1} cell array of [Ns x Np] array
+% twsP_signal : tissue-weighted smoothed signal for GM & WM of 
+%               Ns subjects, {Ns x 1} cell array of [2 x Np] array
+% ttwsP_signal: same as twsP_signal but reorganized per tissue class,
+%               as a {1 x 2} cell array of [Ns x Np] array
+% exMask      : explicit mask, using majority and >20% for GM & WM
+%               a [2 x Np] array
+
+
+
+%% 1/ Do the processing
 % Deal with the Ns subjects, one at a time.
 if create_data
     for ii=Ns:-1:1
@@ -43,13 +87,13 @@ if create_data
         [P_signal(ii,:), P_GmWmCsf{ii}] = cp_create_data(r_jitter);
         % Smooth the signals, Gaussian & tissue-weighted
         data_ii = struct('P_signal',P_signal(ii,:),'P_GmWmCsf',P_GmWmCsf{ii});
-        [gP_signal(ii,:),gP_GmWmCsf{ii},twsP_signal{ii}] = ...
+        [gsP_signal(ii,:),gsP_GmWmCsf{ii},twsP_signal{ii}] = ...
             cp_smooth_data(data_ii,8);
         % Reorganize
         %   * smoothed tissue classes (-> expl mask) and
         %   * tissue-weighted smoothed signals
         for jj=1:3
-            ggP_GmWmCsf{jj}(ii,:) = gP_GmWmCsf{ii}(jj,:);
+            ggsP_GmWmCsf{jj}(ii,:) = gsP_GmWmCsf{ii}(jj,:);
             pP_GmWmCsf{jj}(ii,:) = P_GmWmCsf{ii}(jj,:);
         end
         for jj=1:2
@@ -57,7 +101,7 @@ if create_data
         end
     end
     % Create explicit mask
-    [exMask] = cp_explmask(ggP_GmWmCsf);
+    [exMask] = cp_explmask(ggsP_GmWmCsf);
     
     % Create clean signal
     [cP_signal, cP_GmWmCsf, T_names] = cp_create_data(0,[0 0 0]); %#ok<*ASGLU>
@@ -66,7 +110,7 @@ else
     load(fn_data)
 end
 
-%% Check how the mean smoothed signal matches the original signal
+%% 2/ Check how the mean smoothed signal matches the original signal
 % Measure Root Mean Square Error, overall and over each segment based on
 % explicit mask, for the G-smoothed and TW-smoothed signals, w.r.t. the
 % true noise-free signal
@@ -78,7 +122,7 @@ l_GMall = find(exMask(1,:));
 RMSE_GMall = sqrt([...
     sum((cP_signal(l_GMall) - mean(P_signal(:,l_GMall))).^2) / ...
     numel(l_GMall) ;
-    sum((cP_signal(l_GMall) - mean(gP_signal(:,l_GMall))).^2) / ...
+    sum((cP_signal(l_GMall) - mean(gsP_signal(:,l_GMall))).^2) / ...
     numel(l_GMall) ;
     sum((cP_signal(l_GMall) - mean(ttwsP_signal{1}(:,l_GMall))).^2) / ...
     numel(l_GMall)]);
@@ -93,7 +137,7 @@ for ii=1:Nsegm_GM
         sum((cP_signal(l_ii) - mean(P_signal(:,l_ii))).^2) / ...
         Nel_GMSegm(ii) );
     RMSE_GMsegm(2,ii) = sqrt( ...
-        sum((cP_signal(l_ii) - mean(gP_signal(:,l_ii))).^2) / ...
+        sum((cP_signal(l_ii) - mean(gsP_signal(:,l_ii))).^2) / ...
         Nel_GMSegm(ii) );
     RMSE_GMsegm(3,ii) = sqrt( ...
         sum((cP_signal(l_ii) - mean(ttwsP_signal{1}(:,l_ii))).^2) / ...
@@ -107,7 +151,7 @@ l_WMall = find(exMask(2,:));
 RMSE_WMall = sqrt([...
     sum((cP_signal(l_WMall) - mean(P_signal(:,l_WMall))).^2) / ...
     numel(l_WMall) ;
-    sum((cP_signal(l_WMall) - mean(gP_signal(:,l_WMall))).^2) / ...
+    sum((cP_signal(l_WMall) - mean(gsP_signal(:,l_WMall))).^2) / ...
     numel(l_WMall) ;
     sum((cP_signal(l_WMall) - mean(ttwsP_signal{2}(:,l_WMall))).^2) / ...
     numel(l_WMall)]);
@@ -122,7 +166,7 @@ for ii=1:Nsegm_WM
         sum((cP_signal(l_ii) - mean(P_signal(:,l_ii))).^2) / ...
         Nel_WMSegm(ii) );
     RMSE_WMsegm(2,ii) = sqrt( ...
-        sum((cP_signal(l_ii) - mean(gP_signal(:,l_ii))).^2) / ...
+        sum((cP_signal(l_ii) - mean(gsP_signal(:,l_ii))).^2) / ...
         Nel_WMSegm(ii) );
     RMSE_WMsegm(3,ii) = sqrt( ...
         sum((cP_signal(l_ii) - mean(ttwsP_signal{2}(:,l_ii))).^2) / ...
@@ -142,7 +186,7 @@ fprintf('RMSE ratio\n')
 fprintf('\tGM, no-sm/TW-m %2.2f and G-sm/TW-m %2.2f\n',RMSE_GMall(1)/RMSE_GMall(3),RMSE_GMall(2)/RMSE_GMall(3))
 fprintf('\tWM, no-sm/TW-m %2.2f and G-sm/TW-m %2.2f\n',RMSE_WMall(1)/RMSE_WMall(3),RMSE_WMall(2)/RMSE_GMall(3))
 
-%% Plot things
+%% 3/ Plot things
 
 % Original signals, noisy and mean, + same but G-smoothed
 % Plot things, eiter into a single figure or multiple ones.
@@ -155,13 +199,13 @@ if plot_all
     subplot(2,2,1)
     plot_Psignal(P_signal,cP_signal)
     subplot(2,2,2)
-    plot_gPsignal(gP_signal,cP_signal)
+    plot_gPsignal(gsP_signal,cP_signal)
     subplot(2,2,3)
     plot_twsPsignal(ttwsP_signal,exMask,cP_signal)
     subplot(4,2,6)
     plot_pPGmWmCsf(pP_GmWmCsf)
     subplot(4,2,8)
-    plot_ggPGmWmCsf(ggP_GmWmCsf,exMask)
+    plot_ggPGmWmCsf(ggsP_GmWmCsf,exMask)
     set(gcf,'Position',[500 150 1600 1200])
     saveas(gcf,'TissueW_smoothing_demo.png');
 end
@@ -176,7 +220,7 @@ saveas(gcf,'demo_OriginalSignal.png');
 % Gaussian smoothed multi-subj signal
 % -----------------------------------
 figure,
-plot_gPsignal(gP_signal,cP_signal)
+plot_gPsignal(gsP_signal,cP_signal)
 saveas(gcf,'demo_GsmoothedSignal.png');
 
 % Tissue-weighted smoothed multi-subj signal
@@ -191,7 +235,7 @@ figure,
 subplot(2,1,1)
 plot_pPGmWmCsf(pP_GmWmCsf)
 subplot(2,1,2)
-plot_ggPGmWmCsf(ggP_GmWmCsf,exMask)
+plot_ggPGmWmCsf(ggsP_GmWmCsf,exMask)
 saveas(gcf,'demo_TissueProb.png');
 
 % Signals within the explicit mask, original + G-/TW-smoothed
@@ -206,7 +250,7 @@ for ii=1:Nsegm_GM
     plot(px,cP_signal(l_ii),'k--','LineWidth',3)
     hold on
     plot(px,mean(P_signal(:,l_ii)),'b-','LineWidth',2)
-    plot(px,mean(gP_signal(:,l_ii)),'r-','LineWidth',1.5)
+    plot(px,mean(gsP_signal(:,l_ii)),'r-','LineWidth',1.5)
     plot(px,mean(ttwsP_signal{1}(:,l_ii)),'g-','LineWidth',1.5)
 end
 % Add grey lines to seperate segments
@@ -229,7 +273,7 @@ for ii=1:Nsegm_WM
     plot(px,cP_signal(l_ii),'k--','LineWidth',3)
     hold on
     plot(px,mean(P_signal(:,l_ii)),'b-','LineWidth',2)
-    plot(px,mean(gP_signal(:,l_ii)),'r-','LineWidth',1.5)
+    plot(px,mean(gsP_signal(:,l_ii)),'r-','LineWidth',1.5)
     plot(px,mean(ttwsP_signal{2}(:,l_ii)),'g-','LineWidth',1.5)
 end
 % Add grey lines to seperate segments
@@ -260,11 +304,11 @@ title('Noisy signals, its mean (-), and true signal (--)')
 
 end
 
-function plot_gPsignal(gP_signal,cP_signal)
+function plot_gPsignal(gsP_signal,cP_signal)
 
-plot(gP_signal','LineWidth',.3,'Color',[1 .8 .8])
+plot(gsP_signal','LineWidth',.3,'Color',[1 .8 .8])
 hold on
-plot(mean(gP_signal),'LineWidth',2,'Color',[.1 .1 .1])
+plot(mean(gsP_signal),'LineWidth',2,'Color',[.1 .1 .1])
 plot(cP_signal,'LineWidth',2,'Color',[.5 .5 .5],'LineStyle','--')
 title('Smoothed noisy signals, its mean (-), and true signal (--)')
 
@@ -300,13 +344,13 @@ title('Noisy tissue probabilities and their mean (-)')
 
 end
 
-function plot_ggPGmWmCsf(ggP_GmWmCsf,exMask)
+function plot_ggPGmWmCsf(ggsP_GmWmCsf,exMask)
 
-plot(ggP_GmWmCsf{1}','LineWidth',.3,'Color',[.8 .8 1])
+plot(ggsP_GmWmCsf{1}','LineWidth',.3,'Color',[.8 .8 1])
 hold on
-plot(mean(ggP_GmWmCsf{1}),'LineWidth',2,'Color',[0 0 1])
-plot(ggP_GmWmCsf{2}','LineWidth',.3,'Color',[1 .8 .8])
-plot(mean(ggP_GmWmCsf{2}),'LineWidth',2,'Color',[1 0 0])
+plot(mean(ggsP_GmWmCsf{1}),'LineWidth',2,'Color',[0 0 1])
+plot(ggsP_GmWmCsf{2}','LineWidth',.3,'Color',[1 .8 .8])
+plot(mean(ggsP_GmWmCsf{2}),'LineWidth',2,'Color',[1 0 0])
 plot(exMask(1,:),'LineWidth',2,'Color',[0 0 .5],'LineStyle','--')
 plot(exMask(2,:),'LineWidth',2,'Color',[.5 0 0],'LineStyle','--')
 title('Smoothed noisy tissue prob, their mean (-), and explicit mask (--)')
@@ -325,9 +369,9 @@ end
 % title('Noisy signals, its mean (-), and true signal (--)')
 %
 % subplot(2,2,2)
-% plot(gP_signal','LineWidth',.3,'Color',[1 .8 .8])
+% plot(gsP_signal','LineWidth',.3,'Color',[1 .8 .8])
 % hold on
-% plot(mean(gP_signal),'LineWidth',2,'Color',[.1 .1 .1])
+% plot(mean(gsP_signal),'LineWidth',2,'Color',[.1 .1 .1])
 % plot(cP_signal,'LineWidth',2,'Color',[.5 .5 .5],'LineStyle','--')
 % title('Smoothed noisy signals, its mean (-), and true signal (--)')
 %
@@ -355,11 +399,11 @@ end
 % title('Noisy tissue probabilities and their mean (-)')
 %
 % subplot(4,2,8)
-% plot(ggP_GmWmCsf{1}','LineWidth',.3,'Color',[.8 .8 1])
+% plot(ggsP_GmWmCsf{1}','LineWidth',.3,'Color',[.8 .8 1])
 % hold on
-% plot(mean(ggP_GmWmCsf{1}),'LineWidth',2,'Color',[0 0 1])
-% plot(ggP_GmWmCsf{2}','LineWidth',.3,'Color',[1 .8 .8])
-% plot(mean(ggP_GmWmCsf{2}),'LineWidth',2,'Color',[1 0 0])
+% plot(mean(ggsP_GmWmCsf{1}),'LineWidth',2,'Color',[0 0 1])
+% plot(ggsP_GmWmCsf{2}','LineWidth',.3,'Color',[1 .8 .8])
+% plot(mean(ggsP_GmWmCsf{2}),'LineWidth',2,'Color',[1 0 0])
 % plot(exMask(1,:),'LineWidth',2,'Color',[.1 .1 .1],'LineStyle','--')
 % plot(exMask(2,:),'LineWidth',2,'Color',[.1 .1 .1],'LineStyle','--')
 % title('Smoothed noisy tissue prob, their mean (-), and explicit mask (--)')
@@ -376,9 +420,9 @@ end
 % plot(cP_signal,'LineWidth',2,'Color',[.5 .5 .5],'LineStyle','--')
 % title('Noisy signals, its mean (-), and true signal (--)')
 % subplot(3,1,2)
-% plot(gP_signal','LineWidth',.3,'Color',[1 .8 .8])
+% plot(gsP_signal','LineWidth',.3,'Color',[1 .8 .8])
 % hold on
-% plot(mean(gP_signal),'LineWidth',2,'Color',[.1 .1 .1])
+% plot(mean(gsP_signal),'LineWidth',2,'Color',[.1 .1 .1])
 % plot(cP_signal,'LineWidth',2,'Color',[.5 .5 .5],'LineStyle','--')
 % title('Smoothed noisy signals, its mean (-), and true signal (--)')
 % subplot(3,1,3)
