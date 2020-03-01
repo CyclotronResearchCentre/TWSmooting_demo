@@ -4,8 +4,8 @@ function [exMask] = cp_explmask(gP_GmWmCsf)
 % - have a higher probability of being GM than  WM or CSF
 % - have a probabiliy larger than 20%
 % 
-% The input could come from a single subject or multiple ones. In the l
-% atter case, then the tissue probabilities are averaged across subjects.
+% The input could come from a single subject or multiple ones. In the 
+% latter case, then the tissue probabilities are averaged across subjects.
 % 
 % INPUT
 % gP_GmWmCsf : array or cell array of (smoothed) tissue probabilities
