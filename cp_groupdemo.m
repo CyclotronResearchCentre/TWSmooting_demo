@@ -14,6 +14,7 @@ function cp_groupdemo(opt)
 % .plot_all     , create the big figs with multi-plots (1) or not (0, def)
 % .create_data  , create the data (1) or try to load them (0, def)
 % .fn_data      , filename for saved data
+% .save_fig     , save figures into .png files (1) or not (0, def)
 %
 %__________________________________________________________________________
 % Copyright (C) 2019 GIGA Institute
@@ -29,6 +30,7 @@ function cp_groupdemo(opt)
 opt_def = struct(...
     'plot_all', 0, ... % no big figs with multi-plots
     'create_data', 0, ... % try 1st to load the data
+    'save_fig', 0, ... % not saving figures into file
     'fn_data', 'TWSdata_demo.mat');
 
 % check options & defaults
@@ -36,9 +38,10 @@ if nargin==0, opt = []; end
 [opt] = crc_check_flag(opt_def,opt);
 
 % get options
-plot_all = opt.plot_all;
+plot_all    = opt.plot_all;
 create_data = opt.create_data;
-fn_data = opt.fn_data;
+fn_data     = opt.fn_data;
+save_fig    = opt.save_fig;
 
 % check if data file exist
 if ~exist(fn_data,'file') && ~create_data
@@ -207,27 +210,36 @@ if plot_all
     subplot(4,2,8)
     plot_ggPGmWmCsf(ggsP_GmWmCsf,exMask)
     set(gcf,'Position',[500 150 1600 1200])
-    saveas(gcf,'TissueW_smoothing_demo.png');
+    if save_fig
+        saveas(gcf,'TissueW_smoothing_demo.png');
+    end
 end
 
 % 2/ Plot in different figures
 %=============================
 % Multi-subj noisy signal
-figure,
+% -----------------------
+figure, 
 plot_Psignal(P_signal,cP_signal)
-saveas(gcf,'demo_OriginalSignal.png');
+if save_fig
+    saveas(gcf,'demo_OriginalSignal.png');
+end
 
 % Gaussian smoothed multi-subj signal
 % -----------------------------------
 figure,
 plot_gPsignal(gsP_signal,cP_signal)
-saveas(gcf,'demo_GsmoothedSignal.png');
+if save_fig
+    saveas(gcf,'demo_GsmoothedSignal.png');
+end
 
 % Tissue-weighted smoothed multi-subj signal
 % ------------------------------------------
 figure,
 plot_twsPsignal(ttwsP_signal,exMask,cP_signal)
-saveas(gcf,'demo_TWsmoothedSignal.png');
+if save_fig
+    saveas(gcf,'demo_TWsmoothedSignal.png');
+end
 
 % Tissue probabilities, original & smoothed
 % -----------------------------------------
@@ -236,7 +248,9 @@ subplot(2,1,1)
 plot_pPGmWmCsf(pP_GmWmCsf)
 subplot(2,1,2)
 plot_ggPGmWmCsf(ggsP_GmWmCsf,exMask)
-saveas(gcf,'demo_TissueProb.png');
+if save_fig
+    saveas(gcf,'demo_TissueProb.png');
+end
 
 % Signals within the explicit mask, original + G-/TW-smoothed
 % -----------------------------------------------------------
@@ -289,10 +303,12 @@ legend('True signal', ...
 title('WM segments')
 set(gcf,'Position',[600 120 500 800])
 
-saveas(gcf,'demo_RMSE_segments.png');
+if save_fig
+    saveas(gcf,'demo_RMSE_segments.png');
+end
 
 end
-%% PLOTTING FUNCTIONS
+%% PLOTTING SUB-FUNCTIONS
 
 function plot_Psignal(P_signal,cP_signal)
 
