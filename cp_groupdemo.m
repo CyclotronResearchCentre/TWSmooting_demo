@@ -204,7 +204,7 @@ if plot_all
     subplot(2,2,2)
     plot_gPsignal(gsP_signal,cP_signal)
     subplot(2,2,3)
-    plot_twsPsignal(ttwsP_signal,exMask,cP_signal)
+    plot_msktwsPsignal(ttwsP_signal,exMask,cP_signal)
     subplot(4,2,6)
     plot_pPGmWmCsf(pP_GmWmCsf)
     subplot(4,2,8)
@@ -235,10 +235,18 @@ end
 
 % Tissue-weighted smoothed multi-subj signal
 % ------------------------------------------
+% No masking
 figure,
-plot_twsPsignal(ttwsP_signal,exMask,cP_signal)
+plot_twsPsignal(ttwsP_signal,cP_signal)
 if save_fig
     saveas(gcf,'demo_TWsmoothedSignal.png');
+end
+
+% With explicit masking
+figure,
+plot_msktwsPsignal(ttwsP_signal,exMask,cP_signal)
+if save_fig
+    saveas(gcf,'demo_mskTWsmoothedSignal.png');
 end
 
 % Tissue probabilities, original & smoothed
@@ -263,9 +271,9 @@ for ii=1:Nsegm_GM
     l_ii = l_GMall(l_GMsegmEnd(ii)+1):l_GMall(l_GMsegmEnd(ii+1));
     plot(px,cP_signal(l_ii),'k--','LineWidth',3)
     hold on
-    plot(px,mean(P_signal(:,l_ii)),'b-','LineWidth',2)
-    plot(px,mean(gsP_signal(:,l_ii)),'r-','LineWidth',1.5)
-    plot(px,mean(ttwsP_signal{1}(:,l_ii)),'g-','LineWidth',1.5)
+    plot(px,mean(P_signal(:,l_ii)),'b-','LineWidth',1.5)
+    plot(px,mean(gsP_signal(:,l_ii)),'color',[.4 .4 1],'LineWidth',1.5)
+    plot(px,mean(ttwsP_signal{1}(:,l_ii)),'c-','LineWidth',1.5)
 end
 % Add grey lines to seperate segments
 y_wd = get(gca,'YLim');
@@ -286,9 +294,9 @@ for ii=1:Nsegm_WM
     l_ii = l_WMall(l_WMsegmEnd(ii)+1):l_WMall(l_WMsegmEnd(ii+1));
     plot(px,cP_signal(l_ii),'k--','LineWidth',3)
     hold on
-    plot(px,mean(P_signal(:,l_ii)),'b-','LineWidth',2)
-    plot(px,mean(gsP_signal(:,l_ii)),'r-','LineWidth',1.5)
-    plot(px,mean(ttwsP_signal{2}(:,l_ii)),'g-','LineWidth',1.5)
+    plot(px,mean(P_signal(:,l_ii)),'r-','LineWidth',1.5)
+    plot(px,mean(gsP_signal(:,l_ii)),'color',[1 .8 .2],'LineWidth',1.5)
+    plot(px,mean(ttwsP_signal{2}(:,l_ii)),'m-','LineWidth',1.5)
 end
 % Add grey lines to seperate segments
 y_wd = get(gca,'YLim');
@@ -308,7 +316,7 @@ if save_fig
 end
 
 end
-%% PLOTTING SUB-FUNCTIONS
+%% PLOTING SUB-FUNCTIONS
 
 function plot_Psignal(P_signal,cP_signal)
 
@@ -330,7 +338,26 @@ title('Smoothed noisy signals, its mean (-), and true signal (--)')
 
 end
 
-function plot_twsPsignal(ttwsP_signal,exMask,cP_signal)
+function plot_twsPsignal(ttwsP_signal,cP_signal)
+subplot(2,1,1)
+plot(ttwsP_signal{1}','LineWidth',.3,'Color',[.8 .8 1])
+hold on
+plot(mean(ttwsP_signal{1}),'LineWidth',2,'Color',[0 0 1])
+plot(cP_signal,'LineWidth',2,'Color',[.2 .2 .2],'LineStyle','--')
+title('TW smoothed noisy signals for GM and true signal (--)')
+axis([0 200 -20 120])
+
+subplot(2,1,2)
+plot(ttwsP_signal{2}','LineWidth',.3,'Color',[1 .8 .8])
+hold on
+plot(mean(ttwsP_signal{2}),'LineWidth',2,'Color',[1 0 0])
+plot(cP_signal,'LineWidth',2,'Color',[.2 .2 .2],'LineStyle','--')
+title('TW smoothed noisy signals for WM and true signal (--)')
+axis([0 200 -20 120])
+
+end
+
+function plot_msktwsPsignal(ttwsP_signal,exMask,cP_signal)
 
 Ns = size(ttwsP_signal{1},1);
 plot(ttwsP_signal{1}'.*(exMask(1,:)'*ones(1,Ns)),'LineWidth',.3,'Color',[.8 .8 1])
@@ -345,7 +372,7 @@ plot(mM_ttws2P_signal,'LineWidth',2,'Color',[1 0 0],'LineStyle','-')
 % plot(mean(ttwsP_signal{1}).*exMask(1,:),'LineWidth',2,'Color',[.1 .1 .1])
 % plot(mean(ttwsP_signal{2}).*exMask(2,:),'LineWidth',2,'Color',[.1 .1 .1])
 plot(cP_signal,'LineWidth',2,'Color',[.2 .2 .2],'LineStyle','--')
-title('Tissue-w. smoothed noisy signals, its mean (-), and true signal (--)')
+title('Masked TW smoothed signals, GM (blue) and WM (red), mean (-), and true signal (--)')
 
 end
 
@@ -356,7 +383,7 @@ hold on
 plot(mean(pP_GmWmCsf{1}),'LineWidth',2,'Color',[0 0 1])
 plot(pP_GmWmCsf{2}','LineWidth',.3,'Color',[1 .8 .8])
 plot(mean(pP_GmWmCsf{2}),'LineWidth',2,'Color',[1 0 0])
-title('Noisy tissue probabilities and their mean (-)')
+title('Noisy tissue probabilities, GM (blue) and WM (red), and their mean (-)')
 
 end
 
