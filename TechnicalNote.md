@@ -1,5 +1,6 @@
 # Tissue-weighted smoothing evaluation
 
+[TOC]
 ---
 
 ## Introduction
@@ -149,10 +150,11 @@ where
 - Same as the previous figure but zooming in on the true and average signals over the explicit mask segments, for GM (top) and WM (bottom). The RMSE for the signal without smoothing, with Gaussian smoothing, and tissue-weighted (TW) smoothing is also calculated.
 	<img src="demo_RMSE_segments.png" style="zoom: 1O0%;" />
   Quite obviously, averaging the noisy signal over 20 subjects irons out the signal over the middle part of the segments. Specifically
+  
     - Without smoothing (blue line), the signal deviates on the segment extremities, 1 or 2 voxels at most, because of the anatomical variance introduced. 
     - When applying Gaussian smoothing (red line), the signal is a bit smoother in the middle part of each tissue segment but deviates largely close to the edges. This is due to the "partial volume effect", i.e. signal from different tissue classes are mixed up. WM signal is always dragged down because both adjacent GM and CSF tissues have lower intensities (100 versus 50 and 5), while the GM signal is dragged up by adjacent WM (50 vs 100) or down by adjacent CSF (50 vs5). 
-    - On the contrary, the signal after tissue-weighted smoothing (green line) is smooth and remains flat **over the whole tissue segment**.
-
+  - On the contrary, the signal after tissue-weighted smoothing (green line) is smooth and remains flat **over the whole tissue segment**.
+  
   The RMSE values reflects these observations with a large value for the signal without smoothing (large-ish RMSE), after Gaussian smoothing (even larger RMSE), and after tissue-weighted smoothing (tiny RMSE) . 
 
 
