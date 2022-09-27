@@ -111,8 +111,7 @@ After averaging over the 20 subjects, one would expect that the resulting mean (
 - no smoothing is applied; 
 - the signal is smoothed with the standard Gaussian and the tissue-weighted method.
 
-
-<img src="https://latex.codecogs.com/gif.latex?\mbox{RMSE}_{TC}=\sqrt{\frac{\sum_{i\in\mbox{ExplMsk}_{TC}}(tS_i-sS_i)^2}{\vert\mbox{ExplMsk}_{TC}\vert}}" />
+<img src="https://latex.codecogs.com/gif.latex?\mbox{RMSE}_{TC}=\sqrt{\frac{\sum_{i\in\mbox{ExplMsk}_{TC}}(tS_i-sS_i)^2}{[\mbox{ExplMsk}_{TC}]}}" />
 
 where
 
@@ -122,7 +121,7 @@ where
 | <img src="https://latex.codecogs.com/gif.latex?\mbox{ExplMsk}_{TC}" /> | Explicit mask for tissue class <img src="https://latex.codecogs.com/gif.latex?TC" /> |
 | <img src="https://latex.codecogs.com/gif.latex?tS_i" /> | True signal at voxel <img src="https://latex.codecogs.com/gif.latex?i" /> |
 | <img src="https://latex.codecogs.com/gif.latex?sS_i" /> | Averaged (over 20 subjects) signal with/without smoothing at voxel <img src="https://latex.codecogs.com/gif.latex?i" /> |
-| <img src="https://latex.codecogs.com/gif.latex?\vert\mbox{ExplMsk}_{TC}\vert" /> | Number of voxels in explicit mask for tissue class <img src="https://latex.codecogs.com/gif.latex?TC" /> |
+| <img src="https://latex.codecogs.com/gif.latex?[\mbox{ExplMsk}_{TC}]" /> | Number of voxels in explicit mask for tissue class <img src="https://latex.codecogs.com/gif.latex?TC" /> |
 
 ---
 

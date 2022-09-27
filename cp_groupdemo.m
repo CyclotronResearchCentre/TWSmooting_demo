@@ -17,10 +17,10 @@ function cp_groupdemo(opt)
 % .save_fig     , save figures into .png files (1) or not (0, def)
 %
 %__________________________________________________________________________
-% Copyright (C) 2019 GIGA Institute
+% Copyright (C) 2019 Cyclotron Research Centre
 
 % Written by C. Phillips, 2019.
-% Cyclotron Research Centre, University of Liege, Belgium
+% GIGA Institute, University of Liege, Belgium
 
 % Q: should I consider the T-SPOON approach ?
 % -> for the sake of completeness, yes!

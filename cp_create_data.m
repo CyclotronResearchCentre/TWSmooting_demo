@@ -14,14 +14,15 @@ function [P_signal, P_GmWmCsf,T_names] = ...
 % P_signal  : signal profile, [1 x N] array
 % P_GmWmCsf : tissue probabilites profiles, [3 x N] array
 %__________________________________________________________________________
-% Copyright (C) 2019 GIGA Institute
+% Copyright (C) 2019 Cyclotron Research Centre
 
 % Written by C. Phillips, 2019.
-% Cyclotron Research Centre, University of Liege, Belgium
+% GIGA Institute, University of Liege, Belgium
+
 
 %% Key parameters
 if nargin<3, plot_fig = 0; end
-if nargin<2, T_noise  = [2 2 10]; end
+if nargin<2, T_noise  = [5 5 10]; end
 if nargin<0, r_jitter=0; end
 
 % for GM, WM & CSF respectively

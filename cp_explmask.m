@@ -16,10 +16,10 @@ function [exMask] = cp_explmask(gP_GmWmCsf)
 % OUTPUT
 % exMask   : [2 x Npt] array with explicit GM and WM mask
 %__________________________________________________________________________
-% Copyright (C) 2019 GIGA Institute
+% Copyright (C) 2019 Cyclotron Research Centre
 
 % Written by C. Phillips, 2019.
-% Cyclotron Research Centre, University of Liege, Belgium
+% GIGA Institute, University of Liege, Belgium
 
 %% Deal with input
 % Single subject = array data -> put in cell

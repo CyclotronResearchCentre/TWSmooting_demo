@@ -20,10 +20,10 @@ function [gsP_signal,gsP_GmWmCsf,twsP_signal,exMask]  = ...
 % exMask      : explicit mask, using majority and >20% for GM & WM
 %               Just for that single subject -> not group level!
 %__________________________________________________________________________
-% Copyright (C) 2019 GIGA Institute
+% Copyright (C) 2019 Cyclotron Research Centre
 
 % Written by C. Phillips, 2019.
-% Cyclotron Research Centre, University of Liege, Belgium
+% GIGA Institute, University of Liege, Belgium
 
 %% Some parameters
 if nargin<3, plot_fig = 0; end
