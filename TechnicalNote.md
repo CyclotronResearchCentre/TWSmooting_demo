@@ -29,7 +29,7 @@ where:
 
 | Parameter | Meaning  |
 | ------ | -------- |
-| <img src="https://latex.codecogs.com/gif.latex?p_j" /> | Quantitative map for subject <img src="https://latex.codecogs.com/gif.latex?j" /> after tissue-weighted smoothing |
+| <img src="https://latex.codecogs.com/gif.latex?p_j" /> | Quantitative map <img src="https://latex.codecogs.com/gif.latex?s_j" /> for subject <img src="https://latex.codecogs.com/gif.latex?j" /> after tissue-weighted smoothing |
 | <img src="https://latex.codecogs.com/gif.latex?s_j" /> | Participant-specific quantitative map warped to group space by deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> |
 | <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> | Participant-specific deformation mapping from native to group space |
 | <img src="https://latex.codecogs.com/gif.latex?w_j" /> | Participant-specific tissue weights given by <img src="https://latex.codecogs.com/gif.latex?\|J_j\| t_j" /> |
@@ -56,11 +56,36 @@ For each tissue class of interest, i.e. GM and WM, an explicit mask is generated
 
 This explicit mask ensures that for a voxel will only appear in one tissue class, either GM or WM, the one with the largest probability (on average across the group)
 
-### "Tissue-SPecific, smOOthing-compeNsated" method, aka.` T-SPOON`
+### "Tissue-SPecific, smOOthing-compeNsated" method, aka. `T-SPOON`
 
-This focuses solely on smoothing operation, still some "binary mask" are needed but there is no description of the 'binarization'.
+The `T-SPOON` approach was validated and demoed only for WM and diffusion-MRI derived parameter such as "fractional anisotropy" (FA) and "mean diffusivity" (MD) by Lee et al (2009). This focuses solely on the smoothing operation within WM, still some WM "binary mask" are needed but there is no description of the 'binarization'. Lee et al (2009) make reference to Paus et al. (1999), which talks about 
 
----
+> ...blurring of white matter binary masks to generate three-dimensional (3D) maps of white matter "density".
+
+Even if defined solely for WM and diffusion parameters, `T-SPOON` could be extend to GM and be applied onto other parametric maps. The `T-SPOON` smoothing  is thus defined as follow:
+
+<img src="https://latex.codecogs.com/gif.latex?p_j=\frac{g*(m_js_j)}{g*m_j}\:m_{\tiny\mbox{group}}" />
+
+where:
+
+| Parameter | Meaning  |
+| ------ | -------- |
+| <img src="https://latex.codecogs.com/gif.latex?p_j" /> | Quantitative map <img src="https://latex.codecogs.com/gif.latex?s_j" /> for subject <img src="https://latex.codecogs.com/gif.latex?j" /> after `T-SPOON` smoothing |
+| <img src="https://latex.codecogs.com/gif.latex?s_j" /> | Participant-specific quantitative map warped to group space by deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> |
+| <img src="https://latex.codecogs.com/gif.latex?m_j" /> | Participant-specific binarized tissue mask warped into group space by deformation <img src="https://latex.codecogs.com/gif.latex?\Phi_j" /> |
+| <img src="https://latex.codecogs.com/gif.latex?g*" /> | Convolution by a Gaussian smoothing kernel, i.e. Gaussian smoothing. |
+| <img src="https://latex.codecogs.com/gif.latex?m_{\tiny\mbox{group}}" /> | Group-wise mask identifying voxels to be considered |
+| <img src="https://latex.codecogs.com/gif.latex?./." /> | Ratio applied voxel by voxel over the images |
+
+The <img src="https://latex.codecogs.com/gif.latex?m_{\tiny\mbox{group}}" /> group-wise mask is actually very similar to the "explicit mask" defined for the tissue-weighted smoothing here above, except that, according to Lee et al (2009), it is built as 
+
+> the average normalized WM mask at the 20% level.
+
+Thus this explicit mask is defined as <img src="https://latex.codecogs.com/gif.latex?m_{\tiny\mbox{group}}=(\sum_j m_j)>.2" />, which not be a workable solution for the case where both GM and WM are considered in the VBQ analysis.
+
+### Note on "Tissue-weighted" vs. `T-SPOON`  smoothing
+
+Comparing both formulas for "tissue-weighted" vs. `T-SPOON`  smoothing approaches, one can notice their similarity, except for the masling applied after taking the ration (but this is not so important). Effectively `T-SPOON` is just a special case of the "Tissue-weighted" where the finer modulated warped tissue weights as simply approximated by a binary mask!
 
 ## Simulation
 
