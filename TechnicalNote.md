@@ -7,16 +7,20 @@
 
 After being warped into a common space, typically a group averaged in line with the MNI space, MR images are smoothed. This is useful to : 1/ remove some high-frequency noise, 2/ reduce the multiple comparison problem, and 3/ reduce the remaining inter-subject anatomical variability.
 
-With quantitative MRI, one is interested in the signal coming from the GM and/or the WM, standard Gaussian smoothing would therefore mix the signal coming from these 2 tissues classes, i.e. introducing some partial volume effect! One would therefore want to smooth the images "within each tissue class". Such an approach was introduced by Drangaski et al. (2011) as a specific way to smooth data in the case of "Voxel-Based Quantification" (VBQ) analysis. 
+With quantitative MRI, one is interested in the signal coming from the GM and/or the WM, standard Gaussian smoothing would therefore mix the signal coming from these 2 tissues classes, i.e. introducing some partial volume effect (PVE). One would therefore want to smooth the images "within each tissue class". Such  "tissue-weighted smoothing" approach was introduced by Drangaski et al. (2011) as a specific way to smooth data in the case of "Voxel-Based Quantification" (VBQ) analysis. Then the creation procedure of the tissue masks (needed for the actual statistical VBQ analysis within GM and WM)  was clearly defined by Callaghan et al. (2014).
 
-Another technique is the "*T*issue-*SP*ecific, sm*OO*thing-compe*N*sated" method, aka. T-SPOON, by Eun Lee et al. It is not considered here, at least for the moment...
+Another technique is the "*T*issue-*SP*ecific, sm*OO*thing-compe*N*sated" method, aka. `T-SPOON`, by Lee et al. (2009). T-SPOON results are presented alongside.
 
 ---
-## VBQ methods
+## PVE limiting smoothing
 
-Following spatial warping, the last 2 spatial processing steps are smoothing, using the a tissue-weighted approach) and the creation of explicit masks. 
+First the approaches from the `hMRI` toolbox from Drangaski et al. (2011)  and Callaghan et al. (2014) are presented, then the `T-SPOON` approach from Lee et al. (2009)
 
-### Tissue-weighted smoothing
+### VBQ methods as implemented in the `hMRI` toolbox
+
+Following spatial warping, the last 2 spatial processing steps are smoothing, using the a tissue-weighted approach and the creation of explicit masks. 
+
+#### Tissue-weighted smoothing
 For each tissue class of interest, typically GM and WM, the quantitative map is smoothed according to the tissue class *posterior* probability. Tissue-weighted smoothing is thus defined as follow:
 
 <img src="https://latex.codecogs.com/gif.latex?p_j=\frac{g*(w_js_j)}{g*w_j}\:m_{\tiny\mbox{TPM}}\:m_j" />
@@ -43,7 +47,7 @@ The point of the 2 masks is to ensure only voxels with sufficient
 
 A further explicit mask should be defined at the group level for the statistical analysis.
 
-### Explicit mask
+#### Explicit mask
 
 For each tissue class of interest, i.e. GM and WM, an explicit mask is generated from the group-mean smoothed tissue probabilities.  The GM (resp. WM) mask includes voxels having, on average across all subjects, 
 
@@ -51,6 +55,10 @@ For each tissue class of interest, i.e. GM and WM, an explicit mask is generated
 - larger probability of being GM (resp. WM) than CSF or WM (resp. GM), 
 
 This explicit mask ensures that for a voxel will only appear in one tissue class, either GM or WM, the one with the largest probability (on average across the group)
+
+### "Tissue-SPecific, smOOthing-compeNsated" method, aka.` T-SPOON`
+
+This focuses solely on smoothing operation, still some "binary mask" are needed but there is no description of the 'binarization'.
 
 ---
 
@@ -128,7 +136,7 @@ where
 ## Results
 
 - Signal from the 20 subjects, thin lines, and the average signal intensity bold black line. The true underlying signal is represented by the dashed-grey line. From left to right, each segment contains the following tissue with width (vx): CSF (24), GM (24), WM(24), CSF (26), WM (24), GM (12), WM (8), CSF (12), WM (12), GM (6), CSF (26). Some segments are quite broader than the smoothing kernel (8) but others are of equivalent size (12 or 8) or even a bit smaller (6)
-<img src="demo_OriginalSignal.png" style="zoom: 150%;" />
+  <img src="demo_OriginalSignal.png" style="zoom: 150%;" />
   One can see the variability in signal intensity and some "fussiness" close to the edges. Even when averaging the noisy signal from the 20 subjects, there remains some variability.
   
 - Tissue probabilities, with noise (top) and after Gaussian smoothing (bottom), with the corresponding explicit mask (bottom, dashed line) with, in blue, the GM and, in red, the WM tissue. .
@@ -172,9 +180,11 @@ Tissue-weighted smoothing does make a huge difference, compared to Gaussian smoo
 At least this is the case in this simple simulation.
 
 ## References
-- Draganski et al. (2011), "Regional specificity of MRI contrast parameter changes in normal ageing revealed by voxel-based quantification (VBQ)."
+- B. Draganski et al. (2011), "Regional specificity of MRI contrast parameter changes in normal ageing revealed by voxel-based quantification (VBQ)."
   https://doi.org/10.1016/j.neuroimage.2011.01.052
-- Callaghan et al. (2014), "Widespread age-related differences in the human brain microstructure revealed by quantitative magnetic resonance imaging."
+- M. Callaghan et al. (2014), "Widespread age-related differences in the human brain microstructure revealed by quantitative magnetic resonance imaging."
   https://doi.org/10.1016/j.neurobiolaging.2014.02.008
-- Eun Lee et al. (2009), "A study of diffusion tensor imaging by tissue-specific, smoothing-compensated voxel-based analysis."
+- J.E. Lee et al. (2009), "A study of diffusion tensor imaging by tissue-specific, smoothing-compensated voxel-based analysis."
   https://doi.org/10.1016/j.neuroimage.2008.09.041
+- T. Paus et al. (1999), "Structural Maturation of Neural Pathways in Children and Adolescents: In Vivo Study."
+  https://doi.org/10.1126/science.283.5409.1908
