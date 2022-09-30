@@ -54,7 +54,7 @@ For each tissue class of interest, i.e. GM and WM, an explicit mask is generated
 - \> 20% chance of being GM (resp. WM), and 
 - larger probability of being GM (resp. WM) than CSF or WM (resp. GM), 
 
-This explicit mask ensures that for a voxel will only appear in one tissue class, either GM or WM, the one with the largest probability (on average across the group)
+This explicit mask ensures that for a voxel will only appear in one tissue class, either GM or WM, the one with the largest probability (on average across the group). In other words, this is some kind of "majority mask with minimal threshold".
 
 ### "Tissue-SPecific, smOOthing-compeNsated" method, aka. `T-SPOON`
 
@@ -86,6 +86,8 @@ Thus this explicit mask is defined as <img src="https://latex.codecogs.com/gif.l
 ### Note on "Tissue-weighted" vs. `T-SPOON`  smoothing
 
 Comparing both formulas for "tissue-weighted" vs. `T-SPOON`  smoothing approaches, one can notice their similarity, except for the masling applied after taking the ration (but this is not so important). Effectively `T-SPOON` is just a special case of the "Tissue-weighted" where the finer modulated warped tissue weights as simply approximated by a binary mask!
+
+There remain a few "grey zones" with `T-SPOON` as the binarization of tissue maps is not explictly defined or limited to a simple 20% threshold (for the group-wise mask). The latter could actually lead to difficulties if/when one wants to use `T-SPOON` on both GM and WM and proceed with statistical analysis. Indeed some voxels could well end up in **both** GM and WM masks. My take on this is that one should rather use the explicit "majority mask" as proposed with the `hMRI` toolbox.
 
 ## Simulation
 
@@ -134,7 +136,7 @@ Further simulation could lift these limitations and explicitly test for the effe
 Different versions of  signals and  tissue probabilities profiles are displayed
 
 - true and noisy,
-- subject individual and averaged, 
+- individual subject and group averaged, 
 - smoothed with Gaussian kernel and tissue-weighted
 
 ### Discrepancy measurement
@@ -168,7 +170,7 @@ where
 	<img src="demo_TissueProb.png" style="zoom: 150%;" />
   This simply illustrates the fact that the tissue probabilities are also affected by the standard Gaussian smoothing, still the explicit mask ensures that the location of the underlying tissue classes is correctly recovered.
 
-- The signal from the 20 subjects, thin lines, and the mean signal intensity, bold line, smoothed with the Gaussian kernel.
+- The signal from the 20 subjects, thin red lines, and the mean signal intensity, bold black line, smoothed with the Gaussian kernel.
 	<img src="demo_GsmoothedSignal.png" style="zoom: 150%;" />
   One can see the mixing effect of standard Gaussian smoothing. The signal close to the edges (between tissue classes) is strongly affected and deviates from the true signal (dashed line).
   
