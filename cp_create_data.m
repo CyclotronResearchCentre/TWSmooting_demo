@@ -1,5 +1,5 @@
-function [P_signal, P_GmWmCsf,T_names] = ...
-    cp_create_data(r_jitter,T_noise, plot_fig)
+function [P_signal, P_GmWmCsf, T_names] = ...
+    cp_create_data(r_jitter, T_noise, plot_fig)
 % Function to create some synthetic 1D data:
 % - some "image" values, supposed to be like T1w or MT
 % - some tissue probabilities for GM, WM & CSF

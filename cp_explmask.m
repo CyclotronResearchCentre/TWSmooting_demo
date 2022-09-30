@@ -15,6 +15,11 @@ function [exMask] = cp_explmask(gP_GmWmCsf)
 % 
 % OUTPUT
 % exMask   : [2 x Npt] array with explicit GM and WM mask
+% 
+% REF
+% M. Callaghan et al. (2014), "Widespread age-related differences in the 
+% human brain microstructure revealed by quantitative magnetic resonance 
+% imaging." https://doi.org/10.1016/j.neurobiolaging.2014.02.008
 %__________________________________________________________________________
 % Copyright (C) 2019 Cyclotron Research Centre
 
