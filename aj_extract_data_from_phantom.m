@@ -49,7 +49,6 @@ if plot_fig
     title('2D Slice with 1D Profile Line');
     colormap gray;
     axis image;
-    
 end
 
 end
