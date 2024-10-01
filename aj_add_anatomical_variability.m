@@ -111,10 +111,8 @@ if plot_fig
     
     slice_num = round(size(ph, 1) / 2);
     
-    % Trouver la valeur minimale et maximale globale
 %     min_val = min([ph(:); ph_anatomical(:); ph_noise(:); ph_var(:)]);
 %     max_val = max([ph(:); ph_anatomical(:); ph_noise(:); ph_var(:)]);
-    % Trouver la valeur minimale et maximale de l'image originale
     min_val = min(ph(:));
     max_val = max(ph(:));
 

@@ -1,4 +1,4 @@
-function [gsP_signal, twsP_signal, tosP_signal] = aj_smooth_1d(data_1D, data_GmWmCsf, sm_kern, plot_fig)
+function [gsP_signal, twsP_signal, tosP_signal] = aj_smooth_1d(data_1D, data_GmWmCsfSculpt, sm_kern, plot_fig)
 % aj_smooth_1d Perform 3 smoothing methods (Gaussian, tissue-weighted, TSPOON) on 1D data.
 % 
 % INPUTS:
@@ -31,13 +31,13 @@ wg2 = wg2 / sum(wg2); % Normalize the kernel
 twsP_signal = zeros(2, length(data_1D));
 
 for ii = 1:2  % Only use GM and WM (ignoring CSF)
-    tmp1 = data_1D .* data_GmWmCsf(ii,:) .* (filtfilt(wg2, 1, data_GmWmCsf(ii,:)) > 0.05);
-    twsP_signal(ii,:) = filtfilt(wg, 1, tmp1) ./ filtfilt(wg, 1, data_GmWmCsf(ii,:)) .* (data_GmWmCsf(ii,:) > 0.05);
+    tmp1 = data_1D .* data_GmWmCsfSculpt(ii,:) .* (filtfilt(wg2, 1, data_GmWmCsfSculpt(ii,:)) > 0.05);
+    twsP_signal(ii,:) = filtfilt(wg, 1, tmp1) ./ filtfilt(wg, 1, data_GmWmCsfSculpt(ii,:)) .* (data_GmWmCsfSculpt(ii,:) > 0.05);
 end
 
 %% TSPOON smoothing
 % Create explicit mask based on majority vote and 20% threshold for GM and WM
-iexMask = double(data_GmWmCsf(1,:) > 0.2 | data_GmWmCsf(2,:) > 0.2);
+iexMask = double(data_GmWmCsfSculpt(1,:) > 0.2 | data_GmWmCsfSculpt(2,:) > 0.2);
 
 % Smooth the explicit mask with Gaussian kernel
 gsP_iexMask = filtfilt(wg, 1, iexMask);

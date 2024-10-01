@@ -4,17 +4,20 @@ function [model, param, flag] = aj_phantom_default()
     model.shepp_logan = @shepp_logan;
     model.modified_shepp_logan = @modified_shepp_logan;
     model.yu_ye_wang = @yu_ye_wang;
+    
+    % Define default model type
+    param.model_type = 'modified_shepp_logan';  % Set default model
 
     % Parameters Definitions: Default parameters for generating phantoms
-    param.n = 1;  % Default number of phantoms to generate
+    param.n = 5;  % Default number of phantoms to generate
     param.grid_size = 128;  % Default grid size for 3D phantom
-    param.FOV = 256;  % Field of View in mm (this is the physical size of the phantom in mm)
+    param.FOV = 128;  % Field of View in mm (this is the physical size of the phantom in mm)
     param.jitter_range = [0, 0.1];
     param.jitter_factor = 0.05;  % Default jitter factor for anatomical variability
     param.prenoise_level = 0.01; % Noise to apply before smoothing if flag.noise_before_smoothing is true
     param.sm_kern = 4; % taille du noyau gaussien pour le lissage pour rendre les données + réalistes
     param.noise_range = [0, 0.05];
-    param.noise_level = 0.01;  % Default noise level to add to phantoms
+    param.noise_level = 0.02;  % Default noise level to add to phantoms
 
     % Flag: Used to manage additional behaviors
     flag.noise_before_smoothing = false; % Flag to apply noise before smoothing (and still apply noise after)

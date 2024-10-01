@@ -1,20 +1,20 @@
-function [ph, model] = aj_create_phantom_3d(model, grid_size)
+function [ph, model] = aj_create_phantom_3d(model, FOV_size)
     % aj_create_phantom_3d Three-dimensional Shepp-Logan phantom for MRI simulation
     %   P = aj_create_phantom_3d(DEF, N) generates a 3D phantom with size N and default types.
     %   DEF can be 'Shepp-Logan', 'Modified Shepp-Logan', 'Yu-Ye-Wang', or custom ellipsoids matrix.
     %
     % INPUTS:
-    %   DEF - String specifying phantom type: 'Shepp-Logan' or 'Modified
-    %         Shepp-Logan' or 'Yu-Ye-Wang'. (default is 'Modified Shepp-Logan')
-    %   N   - Scalar specifying the grid size (default is 128).
+    %   model - String specifying phantom type: 'Shepp-Logan' or 'Modified
+    %         Shepp-Logan' or 'Yu-Ye-Wang'.
+    %   FOV_size   - Scalar specifying the grid size.
     % 
     % OUTPUT:
     %   P       - Generated 3D phantom volume.
     %   ELLIPSE - Matrix of ellipsoid parameters used to generate the phantom.
     %
     
-    ph = zeros([grid_size, grid_size, grid_size], 'double');  % Initialize 3D grid with zeros
-    rng = ((0:grid_size-1) - (grid_size-1)/2) / ((grid_size-1)/2);
+    ph = zeros([FOV_size, FOV_size, FOV_size], 'double');  % Initialize 3D grid with zeros
+    rng = ((0:FOV_size-1) - (FOV_size-1)/2) / ((FOV_size-1)/2);
     [x, y, z] = meshgrid(rng, rng, rng);
     
     % Flatten the grids
@@ -45,7 +45,7 @@ function [ph, model] = aj_create_phantom_3d(model, grid_size)
         ph(idx) = ph(idx) + A;
     end
     
-    ph = reshape(ph, [grid_size, grid_size, grid_size]);  % Reshape to original 3D volume
+    ph = reshape(ph, [FOV_size, FOV_size, FOV_size]);  % Reshape to original 3D volume
     
 %     figure;
 %     slice_num = round(size(ph, 1) / 2);

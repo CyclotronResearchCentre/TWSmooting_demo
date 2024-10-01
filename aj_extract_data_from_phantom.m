@@ -19,7 +19,7 @@ dim_z = size(ph_var, 3);
 center_y = round(dim_y / 2);
 center_z = round(dim_z / 2);
 
-data_1D = squeeze(ph_var(:, center_y, center_z));  % Profil 1D sur l'axe x
+data_1D = squeeze(ph_var(:, center_y, center_z))';  % Profil 1D sur l'axe x
 data_2D = ph_var(:, :, center_z);  % Coupe 2D au centre du volume d'axe Z
 
 %% Affichage optionnel
