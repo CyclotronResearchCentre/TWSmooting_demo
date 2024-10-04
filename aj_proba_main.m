@@ -1,55 +1,54 @@
 % Main script to run 1D, 2D, and 3D tissue probability calculations
 
+%% Step 0: Cleaning
 clear all;
 close all;
 clc;
 
-addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
+%% Step 1: Clean up previous run files
+delete('proba_1D_*.mat');
+delete('proba_2D_*.mat');
+delete('proba_3D_*.mat');
+fprintf('Previous run files deleted.\n');
 
+%% Step 2: Parameters Setting
+addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
 [param, flag] = aj_proba_default();
 
-current_path = pwd;  % Get the current working directory
+%% Step 3: Get all 1D, 2D and 3D available files
+current_path = pwd;
+ph_files_1D = dir(fullfile(current_path, 'phantom_1D_*.mat'));
+ph_files_2D = dir(fullfile(current_path, 'phantom_2D_*.mat'));
+ph_files_3D = dir(fullfile(current_path, 'phantom_3D_*.nii'));
 
-% Step 1: Get all available 1D, 2D, and 3D files
-files_1D = dir(fullfile(current_path, 'phantom_1D_*.mat'));
-files_2D = dir(fullfile(current_path, 'phantom_2D_*.mat'));
-files_3D = dir(fullfile(current_path, 'phantom_3D_*.nii'));
-
-% Check if there are any files
-if isempty(files_1D)
-    fprintf('No 1D files found.\n');
+if isempty(ph_files_1D)
+    error('No 1D file found.\n');
+elseif isempty(ph_files_2D)
+    error('No 2D file found.\n');
+elseif isempty(ph_files_3D)
+    error('No 3D file found.\n');
 else
-    fprintf('Found %d 1D files.\n', length(files_1D));
+    fprintf('Found %d 1D files.\n', length(ph_files_1D));
+    fprintf('Found %d 2D files.\n', length(ph_files_2D));
+    fprintf('Found %d 3D files.\n', length(ph_files_3D));
 end
 
-if isempty(files_2D)
-    fprintf('No 2D files found.\n');
-else
-    fprintf('Found %d 2D files.\n', length(files_2D));
-end
-
-if isempty(files_3D)
-    fprintf('No 3D files found.\n');
-else
-    fprintf('Found %d 3D files.\n', length(files_3D));
-end
-
-% Step 2: Process each 1D, 2D, and 3D file
-for i = 1:min([length(files_1D), length(files_2D), length(files_3D)])
+%% Step 4: Process and save each 1D, 2D and 3D file
+for i = 1:min([length(ph_files_1D), length(ph_files_2D), length(ph_files_3D)])
     % Load 1D data
-    data_1D_file = fullfile(current_path, files_1D(i).name);
+    data_1D_file = fullfile(current_path, ph_files_1D(i).name);
     fprintf('Loading 1D data from %s...\n', data_1D_file);
     load(data_1D_file, 'data_1D');
     fprintf('1D data loaded successfully.\n');
 
     % Load 2D data
-    data_2D_file = fullfile(current_path, files_2D(i).name);
+    data_2D_file = fullfile(current_path, ph_files_2D(i).name);
     fprintf('Loading 2D data from %s...\n', data_2D_file);
     load(data_2D_file, 'data_2D');
     fprintf('2D data loaded successfully.\n');
 
     % Load 3D data using SPM
-    data_3D_file = fullfile(current_path, files_3D(i).name);
+    data_3D_file = fullfile(current_path, ph_files_3D(i).name);
     fprintf('Loading 3D data from %s...\n', data_3D_file);
     V = spm_vol(data_3D_file);  % Get volume information from the NIFTI file
     data_3D = spm_read_vols(V);  % Read the volume data
@@ -81,7 +80,7 @@ end
 
 fprintf('Processing complete for all available 1D, 2D, and 3D files.\n');
 
-
+%% USER ORIENTED SCRIPT
 % Main script to run 1D, 2D, and 3D tissue probability calculations
 
 % clear all;

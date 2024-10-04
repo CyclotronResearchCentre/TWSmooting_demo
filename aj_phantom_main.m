@@ -1,19 +1,21 @@
-% Main script to generate 'n' phantoms and extract 1D, 2D, and 3D data
+% Main script to generate n phantoms and extract 1D, 2D and 3D data
 
+%% Step 0: Cleaning
 clear all;
 close all;
 clc;
 
-addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
-
-% Step 0: Clean up previous run files
+%% Step 1: Clean up previous run files
 delete('phantom_3D_*.nii');
 delete('phantom_1D_*.mat');
 delete('phantom_2D_*.mat');
 fprintf('Previous run files deleted.\n');
 
+%% Step 2: Parameters Setting
+addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
 [model, param, flag] = aj_phantom_default();
 
+%% Processing
 % Get the default model type (e.g., 'modified_shepp_logan')
 model_func = model.(param.model_type);
 
@@ -74,14 +76,14 @@ for i = 1:param.n
     fprintf('Saved: %s\n', nifti_filename);
 end
 
-% Save ellipses_all as a .mat file
-save('ellipses_all.mat', 'ellipses_all');
-fprintf('Saved: ellipses_all.mat\n');
-
 fprintf('Phantom generation completed.\n');
 
-% Call statistical analysis if more than 2 phantoms are generated
+%% Call statistical analysis if more than 2 phantoms are generated
 if param.n >= 2
+    % Save ellipses_all as a .mat file
+    save('ellipses_all.mat', 'ellipses_all');
+    fprintf('Saved: ellipses_all.mat\n');
+
     aj_phantom_stat_analysis(phantoms_3D, param);
     aj_quantify_phantom_variability(phantoms_3D);
     aj_quantify_ellipse_variability(ellipses_all);

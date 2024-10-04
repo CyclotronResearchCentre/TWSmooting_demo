@@ -1,12 +1,20 @@
-% Script principal pour exécuter les différentes méthodes de lissage sur
-% des données 1D, 2D et 3D
+% Main script pour exécuter les différentes méthodes de lissage sur des données 1D, 2D et 3D
 
-%% Step 0 : cleaning
-clear;
-clc;
+%% Step 0: Cleaning
+clear all;
 close all;
+clc;
 
-%% Step 1: Récupérer tous les fichiers 1D, 2D et 3D disponibles
+%% Step 1: Clean up previous run files
+delete('results_phantom_1D_*.mat');
+delete('results_phantom_2D_*.mat');
+delete('results_phantom_3D_*.mat');
+fprintf('Previous run files deleted.\n');
+
+%% Step 2: Parameters Setting
+[param, flag] = aj_smooth_default();
+
+%% Step 3: Get all 1D, 2D and 3D available files
 current_path = pwd;
 ph_files_1D = dir(fullfile(current_path, 'phantom_1D_*.mat'));
 proba_files_1D = dir(fullfile(current_path, 'proba_1D_*.mat'));
@@ -16,11 +24,15 @@ ph_files_3D = dir(fullfile(current_path, 'phantom_3D_*.nii'));
 proba_files_3D = dir(fullfile(current_path, 'proba_3D_*.mat'));
 
 if isempty(ph_files_1D)
-    error('Aucun fichier 1D trouvé.');
+    error('No 1D file found.\n');
 elseif isempty(ph_files_2D)
-    error('Aucun fichier 2D trouvé.');
+    error('No 2D file found.\n');
 elseif isempty(ph_files_3D)
-    error('Aucun fichier 3D trouvé.');
+    error('No 3D file found.\n');
+else
+    fprintf('Found %d 1D files.\n', length(ph_files_1D));
+    fprintf('Found %d 2D files.\n', length(ph_files_2D));
+    fprintf('Found %d 3D files.\n', length(ph_files_3D));
 end
 
 if length(ph_files_1D) ~= length(proba_files_1D)
@@ -31,19 +43,11 @@ elseif length(ph_files_3D) ~= length(proba_files_3D)
     error('Le nombre de fichiers de données 3D et de fichiers de probabilités 3D ne correspond pas.');
 end
 
-fprintf('Nombre de fichiers 1D trouvés : %d\n', length(ph_files_1D));
-fprintf('Nombre de fichiers 2D trouvés : %d\n', length(ph_files_2D));
-fprintf('Nombre de fichiers 3D trouvés : %d\n', length(ph_files_3D));
-
-%% Default parameters
-% Paramètres et flags communs de lissage (paramètres ajustables)
-[param, flag] = aj_smooth_default();
-
 %% 1D Smoothing
 % Boucle à travers tous les fichiers 1D
 for i = 1:length(ph_files_1D)
     % Charger les données 1D
-    data_1D_file = fullfile(current_path, ph_files_1D(i).name);
+    data_1D_file = fullfile(current_path, ph_files_1D(i).name); 
     proba_1D_file = fullfile(current_path, proba_files_1D(i).name);
     
     fprintf('Chargement des données 1D depuis %s...\n', data_1D_file);
@@ -66,7 +70,7 @@ for i = 1:length(ph_files_1D)
     % 2. Appliquer le lissage pondéré par les tissus (TWS)
     % --------------------------------------------------------------------
     disp('Exécution du lissage pondéré par les tissus...');
-    twsP_signal = aj_smooth_TWS(data_1D, data_GmWmCsfSculpt_1D, param);
+    [twsP_signal, final_signal] = aj_smooth_TWS(data_1D, data_GmWmCsfSculpt_1D, param);
 
     % --------------------------------------------------------------------
     % 3. Appliquer le lissage TSPOON
@@ -96,6 +100,7 @@ for i = 1:length(ph_files_1D)
         plot(twsP_signal(2,:), 'g-', 'DisplayName', 'Lissage Pondéré (WM)');
         plot(twsP_signal(3,:), 'm-', 'DisplayName', 'Lissage Pondéré (CSF)');
         plot(twsP_signal(4,:), 'y-', 'DisplayName', 'Lissage Pondéré (Sculpt)');
+        plot(final_signal, 'Color', [0, 0.8, 0.8], 'DisplayName', 'VF');
         legend;
         xlabel('Position');
         ylabel('Valeur du signal');
@@ -114,6 +119,16 @@ for i = 1:length(ph_files_1D)
 
         hold off;
     end
+    
+    % Have to reorganize per tissue instead of per subject
+%     for jj=1:3
+%         ggsP_GmWmCsf{jj}(ii,:) = gsP_GmWmCsf{ii}(jj,:);
+%         pP_GmWmCsf{jj}(ii,:) = P_GmWmCsf{ii}(jj,:);
+%     end
+%     for jj=1:2
+%         ttwsP_signal{jj}(ii,:) = twsP_signal{ii}(jj,:);
+%         ttosP_signal{jj}(ii,:) = tosP_signal{ii}(jj,:);
+%     end
 
     % Sauvegarder les résultats dans un fichier .mat spécifique à ce fichier
     if flag.save_data
@@ -125,7 +140,6 @@ for i = 1:length(ph_files_1D)
 end
 
 disp('Traitement terminé pour tous les fichiers 1D.');
-
 
 %% 2D Processing
 % Boucle pour traiter les fichiers 2D
@@ -223,7 +237,6 @@ for i = 1:length(ph_files_2D)
 end
 
 disp('Traitement terminé pour tous les fichiers 2D.');
-
 
 %% 3D Smoothing
 % Boucle pour traiter les fichiers 3D

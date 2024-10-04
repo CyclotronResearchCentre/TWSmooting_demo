@@ -40,7 +40,7 @@ function [gsP_signal] = aj_smooth_gaussian(data, param)
         otherwise
             error('La dimension des données n''est ni 1D, ni 2D, ni 3D');
     end
-
+end
 %     % Option d'affichage des résultats
 %     if flag.plot_fig
 %         switch num_dims
@@ -87,4 +87,3 @@ function [gsP_signal] = aj_smooth_gaussian(data, param)
 %         output_filename = sprintf('smoothed_gaussian_%dD.mat', num_dims);
 %         save(output_filename, 'gsP_signal');
 %     end
-end

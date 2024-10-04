@@ -1,0 +1,15 @@
+function [urls, target_directory] = aj_download_default()
+
+% Liste des URL des fichiers à télécharger
+urls = {
+    'https://s3.amazonaws.com/openneuro.org/ds000117/sub-01/ses-mri/anat/sub-01_ses-mri_acq-mprage_T1w.nii.gz?versionId=L7NqLanecid9geIgqDFn113Q7HNL5ykW',
+    'https://example.com/file2.zip'
+    };
+
+% Répertoire cible
+target_directory = 'C:\Users\antoi\Documents\master_thesis\Data\test';
+
+% % Appel de la fonction
+% download_bids_files(urls, target_directory);
+
+end

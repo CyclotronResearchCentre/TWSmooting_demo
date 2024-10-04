@@ -1,4 +1,4 @@
-function [twsP_signal] = aj_smooth_TWS(data, data_GmWmCsfSculpt, param)
+function [twsP_signal, final_signal] = aj_smooth_TWS(data, data_GmWmCsfSculpt, param)
     % Fonction pour appliquer un lissage pondéré par les tissus sur des données
     % qui peuvent être en 1D, 2D ou 3D (avec probabilités tissulaires GM, WM, CSF, Sculpt).
     
@@ -24,12 +24,11 @@ function [twsP_signal] = aj_smooth_TWS(data, data_GmWmCsfSculpt, param)
     wg2 = wg2 / sum(wg2);
 
     % Initialiser la variable pour le signal lissé
-    twsP_signal = zeros([4, data_size]);  % 4 canaux : GM, WM, CSF, Sculpt
+    twsP_signal = zeros([4, max(data_size(1), data_size(2))]);  % 4 canaux : GM, WM, CSF, Sculpt
 
     % Appliquer le lissage pondéré par les tissus selon la dimension des données
     switch num_dims
         case 1  % Lissage 1D
-            % Vérifier si les dimensions sont correctes
             if size(data_GmWmCsfSculpt, 1) ~= length(data)
                 error('Les dimensions des données 1D et des probabilités tissulaires ne correspondent pas.');
             end
@@ -38,11 +37,24 @@ function [twsP_signal] = aj_smooth_TWS(data, data_GmWmCsfSculpt, param)
                 data = data';
             end
             for ii = 1:4
-                % Vérifier que les dimensions de `data` et `data_GmWmCsfSculpt` correspondent
                 tmp1 = data .* data_GmWmCsfSculpt(:, ii) .* (filtfilt(wg2, 1, data_GmWmCsfSculpt(:, ii)) > 0.05);
                 twsP_signal(ii, :) = filtfilt(wg, 1, tmp1) ./ (filtfilt(wg, 1, data_GmWmCsfSculpt(:, ii)) > 0.05);
             end
-        
+            
+            % Supposons que twsP_signal est une matrice [3 x N], où chaque ligne représente un tissu (GM, WM, CSF)
+            % et que P_GmWmCsf est une matrice [3 x N] contenant les probabilités tissulaires.
+
+            % Combinaison pondérée par les probabilités tissulaires
+            final_signal = zeros(1, size(twsP_signal, 2));
+            for i = 1:size(twsP_signal, 2)
+                % Utiliser les 3 premières colonnes de data_GmWmCsfSculpt (GM, WM, CSF)
+                tissue_prob = data_GmWmCsfSculpt(i, 1:3);
+                tissue_prob = tissue_prob(:) / sum(tissue_prob); % Assurez-vous que tissue_prob est un vecteur colonne
+                
+                % Calculer le signal final par combinaison pondérée
+                final_signal(i) = sum(tissue_prob .* twsP_signal(1:3, i)); % Multiplication élément par élément
+            end
+            
         case 2  % Lissage 2D
             for ii = 1:4
                 tissue_mask = imgaussfilt(data_GmWmCsfSculpt(:,:,ii), param.sm_kern_tws) > 0.05;
@@ -60,6 +72,8 @@ function [twsP_signal] = aj_smooth_TWS(data, data_GmWmCsfSculpt, param)
         otherwise
             error('La dimension des données n''est ni 1D, ni 2D, ni 3D');
     end
+end
+
 
 %     % Option d'affichage des résultats
 %     if flag.plot_fig
@@ -110,4 +124,3 @@ function [twsP_signal] = aj_smooth_TWS(data, data_GmWmCsfSculpt, param)
 %         output_filename = sprintf('smoothed_tissue_weighted_%dD.mat', num_dims);
 %         save(output_filename, 'twsP_signal');
 %     end
-end
