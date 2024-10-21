@@ -1,106 +1,100 @@
-function [iexMask] = aj_create_explicit_mask(tissue_proba)
-    % Fonction pour créer un masque explicite pour la substance grise (GM),
-    % la substance blanche (WM), et le CSF à partir des probabilités tissulaires lissées.
-    % Compatible avec les données 1D, 2D, et 3D.
+function [iexMask] = aj_create_explicit_mask(tissue_proba, dim)
+    % Function to create an explicit mask for different tissues
+    % from the smoothed tissue probabilities in 1D, 2D, or 3D.
     %
-    % INPUT :
-    % tissue_proba : Cell array {3 x 1} contenant les probabilités pour GM, WM, CSF,
-    %                ou une matrice [3 x Npt] en 1D, [3 x Nx x Ny] en 2D, [3 x Nx x Ny x Nz] en 3D.
+    % INPUT:
+    % tissue_proba: Matrix [nb_tissue x nb_pt_x ...] containing probabilities
+    %               for different tissues in 1D, 2D, or 3D.
+    %               Optionally, a cell array {nb_tissue x 1} with probabilities for multiple subjects.
+    % dim: Dimension of the data (1 for 1D, 2 for 2D, 3 for 3D)
     %
-    % OUTPUT :
-    % iexMask : Masque explicite pour GM, WM et CSF. Dimension [3 x ...] avec la même taille que tissue_proba.
-    %           Le masque contient 3 couches : GM, WM, et CSF.
+    % OUTPUT:
+    % iexMask: Explicit mask [nb_tissue x nb_pt_x ...] where the dimensions depend on the input `dim`.
+    %          The mask contains nb_tissue slices for GM, WM, CSF, and Sculpt.
     %
-    % Conditions :
-    % - GM : Probabilité de GM > WM et CSF, et probabilité > 0.2
-    % - WM : Probabilité de WM > GM et CSF, et probabilité > 0.2
-    % - CSF : Probabilité de CSF > GM et WM, et probabilité > 0.2
+    % Conditions:
+    % - GM: GM probability > WM, CSF, and Sculpt probabilities, and probability > 0.2
+    % - WM: WM probability > GM, CSF, and Sculpt probabilities, and probability > 0.2
+    % - CSF: CSF probability > GM, WM, and Sculpt probabilities, and probability > 0.2
+    % - Sculpt: Sculpt probability > GM, WM, and CSF probabilities, and probability > 0.2
 
-    % Vérification de l'entrée : Si ce n'est pas un cell array, on le convertit.
-    if ~iscell(tissue_proba)
-        tmp = tissue_proba;
-        tissue_proba = cell(3,1);
-        for ii = 1:3
-            tissue_proba{ii} = tmp(ii, :);  % Distribution des probabilités entre GM, WM, CSF
-        end
-        need2avg = 0;  % Pas besoin de moyenne si un seul sujet
-    else
-        need2avg = 1;  % Moyenne requise si plusieurs sujets
-    end
-    
-    % Identifier la dimension des données
-    data_size = size(tissue_proba{1});
-    if isvector(tissue_proba{1})
-        disp('Ceci est un vecteur.');
-        data_dims = 1;
-    elseif ismatrix(tissue_proba{1})
-        disp('Ceci est une matrice.');
-        data_dims = 2;
-    else
-        data_dims = length(data_size);  % Nombre de dimensions des données (1, 2 ou 3)
-        disp('eeee');
-        if data_dims == 3
-            disp('Ceci est une matrice 3D.');
-        end
+    % Number of tissues
+    nb_tissue = size(tissue_proba, 1);
+
+    % Initialize avgP_GmWmCsf and iexMask based on dimension
+    switch dim
+        case 1  % 1D case
+            nb_pt = size(tissue_proba, 2);  % Number of points in 1D
+            avgP_GmWmCsf = tissue_proba;  % Tissue probabilities are already 1D
+            iexMask = false(nb_tissue, nb_pt);  % Initialize the explicit mask
+
+        case 2  % 2D case
+            [nb_tissue, nb_pt_x, nb_pt_y] = size(tissue_proba);
+            avgP_GmWmCsf = tissue_proba;  % Tissue probabilities are already 2D
+            iexMask = false(nb_tissue, nb_pt_x, nb_pt_y);  % Initialize the explicit mask
+
+        case 3  % 3D case
+            [nb_tissue, nb_pt_x, nb_pt_y, nb_pt_z] = size(tissue_proba);
+            avgP_GmWmCsf = tissue_proba;  % Tissue probabilities are already 3D
+            iexMask = false(nb_tissue, nb_pt_x, nb_pt_y, nb_pt_z);  % Initialize the explicit mask
+
+        otherwise
+            error('Invalid dimension. dim must be 1, 2, or 3.');
     end
 
-    % Moyenne des probabilités tissulaires si plusieurs sujets
-    if need2avg
-        avgP_GmWmCsf = zeros([3, data_size]);  % Initialisation
-        for ii = 1:3
-            avgP_GmWmCsf(ii, :) = mean(tissue_proba{ii}, 'all');  % Moyenne des probabilités sur tous les sujets
-        end
-    else
-        avgP_GmWmCsf = zeros([3, data_size]);
-        for ii = 1:3
-            avgP_GmWmCsf(ii, :) = tissue_proba{ii};  % Utilisation des probabilités uniques si un seul sujet
+    % Handle the case where tissue_proba is a cell array for multiple subjects
+    if iscell(tissue_proba)
+        avgP_GmWmCsf = zeros(size(tissue_proba{1}));
+        for ii = 1:nb_tissue
+            avgP_GmWmCsf(ii, :, :, :) = mean(tissue_proba{ii}, dim + 1);  % Average over the last dimension (subjects)
         end
     end
 
-    % Initialisation du masque explicite avec les mêmes dimensions
-    iexMask = false([3, data_size]);
+    % Create the explicit mask for each tissue type
+    for i = 1:nb_tissue
+        % Start with a mask that is true for all points (1D, 2D, or 3D)
+        switch dim
+            case 1
+                mask = true(1, nb_pt);  % Mask for 1D
+            case 2
+                mask = true(nb_pt_x, nb_pt_y);  % Mask for 2D
+            case 3
+                mask = true(nb_pt_x, nb_pt_y, nb_pt_z);  % Mask for 3D
+        end
 
-    % Calcul du masque explicite pour GM, WM et CSF en fonction des dimensions
-    if data_dims == 2  % 2D
-        % GM
-        iexMask(1, :, :) = avgP_GmWmCsf(1, :, :) > avgP_GmWmCsf(2, :, :) & ...
-                           avgP_GmWmCsf(1, :, :) > avgP_GmWmCsf(3, :, :) & ...
-                           avgP_GmWmCsf(1, :, :) > 0.2;
-        % WM
-        iexMask(2, :, :) = avgP_GmWmCsf(2, :, :) > avgP_GmWmCsf(1, :, :) & ...
-                           avgP_GmWmCsf(2, :, :) > avgP_GmWmCsf(3, :, :) & ...
-                           avgP_GmWmCsf(2, :, :) > 0.2;
-        % CSF
-        iexMask(3, :, :) = avgP_GmWmCsf(3, :, :) > avgP_GmWmCsf(1, :, :) & ...
-                           avgP_GmWmCsf(3, :, :) > avgP_GmWmCsf(2, :, :) & ...
-                           avgP_GmWmCsf(3, :, :) > 0.2;
+        % Compare tissue i with the other tissues
+        for j = 1:nb_tissue
+            if i ~= j
+                switch dim
+                    case 1
+                        mask = mask & (avgP_GmWmCsf(i, :) > avgP_GmWmCsf(j, :));
+                    case 2
+                        mask = mask & (squeeze(avgP_GmWmCsf(i, :, :)) > squeeze(avgP_GmWmCsf(j, :, :)));
+                    case 3
+                        mask = mask & (squeeze(avgP_GmWmCsf(i, :, :, :)) > squeeze(avgP_GmWmCsf(j, :, :, :)));
+                end
+            end
+        end
 
-    elseif data_dims == 3  % 3D
-        % GM
-        iexMask(1, :, :, :) = avgP_GmWmCsf(1, :, :, :) > avgP_GmWmCsf(2, :, :, :) & ...
-                              avgP_GmWmCsf(1, :, :, :) > avgP_GmWmCsf(3, :, :, :) & ...
-                              avgP_GmWmCsf(1, :, :, :) > 0.2;
-        % WM
-        iexMask(2, :, :, :) = avgP_GmWmCsf(2, :, :, :) > avgP_GmWmCsf(1, :, :, :) & ...
-                              avgP_GmWmCsf(2, :, :, :) > avgP_GmWmCsf(3, :, :, :) & ...
-                              avgP_GmWmCsf(2, :, :, :) > 0.2;
-        % CSF
-        iexMask(3, :, :, :) = avgP_GmWmCsf(3, :, :, :) > avgP_GmWmCsf(1, :, :, :) & ...
-                              avgP_GmWmCsf(3, :, :, :) > avgP_GmWmCsf(2, :, :, :) & ...
-                              avgP_GmWmCsf(3, :, :, :) > 0.2;
+        % Apply the probability > 0.2 condition
+        switch dim
+            case 1
+                mask = mask & (avgP_GmWmCsf(i, :) > 0.2);
+            case 2
+                mask = mask & (squeeze(avgP_GmWmCsf(i, :, :)) > 0.2);
+            case 3
+                mask = mask & (squeeze(avgP_GmWmCsf(i, :, :, :)) > 0.2);
+        end
 
-    else  % 1D (par défaut)
-        % GM
-        iexMask(1, :) = avgP_GmWmCsf(1, :) > avgP_GmWmCsf(2, :) & ...
-                        avgP_GmWmCsf(1, :) > avgP_GmWmCsf(3, :) & ...
-                        avgP_GmWmCsf(1, :) > 0.2;
-        % WM
-        iexMask(2, :) = avgP_GmWmCsf(2, :) > avgP_GmWmCsf(1, :) & ...
-                        avgP_GmWmCsf(2, :) > avgP_GmWmCsf(3, :) & ...
-                        avgP_GmWmCsf(2, :) > 0.2;
-        % CSF
-        iexMask(3, :) = avgP_GmWmCsf(3, :) > avgP_GmWmCsf(1, :) & ...
-                        avgP_GmWmCsf(3, :) > avgP_GmWmCsf(2, :) & ...
-                        avgP_GmWmCsf(3, :) > 0.2;
+        % Assign the final mask for tissue i
+        switch dim
+            case 1
+                iexMask(i, :) = mask;  % Correctly assign the mask for 1D
+            case 2
+                iexMask(i, :, :) = mask;  % Assign for 2D
+            case 3
+                iexMask(i, :, :, :) = mask;  % Assign for 3D
+        end
     end
 end
+

@@ -1,126 +1,169 @@
-function [twsP_signal, final_signal] = aj_smooth_TWS(data, data_GmWmCsfSculpt, param)
-    % Fonction pour appliquer un lissage pondéré par les tissus sur des données
-    % qui peuvent être en 1D, 2D ou 3D (avec probabilités tissulaires GM, WM, CSF, Sculpt).
-    
-    % Identifier la dimension des données
-    data_size = size(data);
-    if isvector(data)
-        disp('Ceci est un vecteur.');
-        num_dims = 1;
-    elseif ismatrix(data)
-        disp('Ceci est une matrice.');
-        num_dims = 2;
-    else
-        num_dims = length(data_size);  % Nombre de dimensions des données (1, 2 ou 3)
-        if num_dims == 3
-            disp('Ceci est une matrice 3D.');
-        end
-    end
-
-    % Générer les noyaux gaussiens
+function [twsP_signal, f_twsP_signal] = aj_smooth_TWS(ph, tissue_proba, param, dim)
+    % Function to apply tissue-weighted smoothing to data that can be in 1D, 2D or 3D
+    % (with tissue probabilities: GM, WM, CSF, Sculpt).
+    %
+    % INPUT:
+    % ph: Data to smooth
+    % tissue_proba: Tissue probabilities matrix
+    % param: Smoothing parameters (including kernel size)
+    % dim: Dimension of the data (1D, 2D or 3D)
+    %
+    % OUTPUT:
+    % twsP_signal: Smoothed signal per tissue
+    % final_signal: Final signal after applying the explicit mask
+    %
+    % Draganski et al, 2011, doi:10.1016/j.neuroimage.2011.01.052
+   
+    % Generate Gaussian kernels
     wg = gausswin(param.sm_kern_tws);
-    wg = wg / sum(wg);  % Normalisation
-    wg2 = gausswin(2 * param.sm_kern_tws);  % Noyau de lissage plus large
+    wg = wg / sum(wg);
+    wg2 = gausswin(2 * param.sm_kern_tws);
     wg2 = wg2 / sum(wg2);
 
-    % Initialiser la variable pour le signal lissé
-    twsP_signal = zeros([4, max(data_size(1), data_size(2))]);  % 4 canaux : GM, WM, CSF, Sculpt
+    nb_tissue = min(size(tissue_proba));
+    nb_pt = max(size(tissue_proba));  % same number as max(size(ph))
 
-    % Appliquer le lissage pondéré par les tissus selon la dimension des données
-    switch num_dims
-        case 1  % Lissage 1D
-            if size(data_GmWmCsfSculpt, 1) ~= length(data)
-                error('Les dimensions des données 1D et des probabilités tissulaires ne correspondent pas.');
-            end
-            % Vérifier que data_1D est un vecteur ligne et le transposer si nécessaire
-            if size(data, 1) == 1
-                data = data';
-            end
-            for ii = 1:4
-                tmp1 = data .* data_GmWmCsfSculpt(:, ii) .* (filtfilt(wg2, 1, data_GmWmCsfSculpt(:, ii)) > 0.05);
-                twsP_signal(ii, :) = filtfilt(wg, 1, tmp1) ./ (filtfilt(wg, 1, data_GmWmCsfSculpt(:, ii)) > 0.05);
-            end
+    switch dim
+        case 1 % 1D Smoothing
+            % INPUT DIMENSIONS : ph [1 x nb_pt] and tissue_proba [nb_tissue x nb_pt]
+            % OUTPUT DIMENSIONS : twsP_signal [nb_tissue x nb_pt] and f_twsP_signal [1 x nb_pt]
             
-            % Supposons que twsP_signal est une matrice [3 x N], où chaque ligne représente un tissu (GM, WM, CSF)
-            % et que P_GmWmCsf est une matrice [3 x N] contenant les probabilités tissulaires.
+            % Initialize the variable for the smoothed signal
+            twsP_signal = zeros([nb_tissue, nb_pt]);
 
-            % Combinaison pondérée par les probabilités tissulaires
-            final_signal = zeros(1, size(twsP_signal, 2));
-            for i = 1:size(twsP_signal, 2)
-                % Utiliser les 3 premières colonnes de data_GmWmCsfSculpt (GM, WM, CSF)
-                tissue_prob = data_GmWmCsfSculpt(i, 1:3);
-                tissue_prob = tissue_prob(:) / sum(tissue_prob); % Assurez-vous que tissue_prob est un vecteur colonne
+            % Create the explicit mask using the function aj_create_explicit_mask
+            iexMask = aj_create_explicit_mask(tissue_proba, 1);
+            
+            % Ensure ph and tissue_proba have compatible dimensions 
+            tissue_proba = tissue_proba'; % tissue_proba is now [nb_pt x nb_tissue]
+            
+            % Apply smoothing for each tissue
+            for ii = 1:nb_tissue
+                filt_data2 = filtfilt(wg2, 1, tissue_proba(:, ii));  % Smoothing on the corresponding tissue probability
+                tissue_mask2 = (filt_data2 > 0.05);  % Create binary mask
+                tmp1 = ph .* tissue_proba(:, ii) .* tissue_mask2;
+
+                % CP
+%                 filt_data1 = filtfilt(wg, 1, tissue_proba(:, ii));
+%                 tissue_mask1 = (filt_data1 > 0.05);
                 
-                % Calculer le signal final par combinaison pondérée
-                final_signal(i) = sum(tissue_prob .* twsP_signal(1:3, i)); % Multiplication élément par élément
+                % V1
+%                 tissue_mask1 = filtfilt(wg, 1, tissue_proba(:, ii));
+%                 tissue_mask1(tissue_mask1 <= 0) = NaN;  % Prevent division by zero or negative values
+
+                % V2
+                tissue_mask1 = filtfilt(wg, 1, tissue_proba(:, ii));
+                tissue_mask1(tissue_mask1 <= 0.05) = NaN;
+
+                smoothed_signal = filtfilt(wg, 1, tmp1) ./ tissue_mask1;
+                smoothed_signal(isnan(smoothed_signal) | isinf(smoothed_signal)) = 0;  % Handle NaN/Inf
+                twsP_signal(ii, :) = smoothed_signal';
             end
             
-        case 2  % Lissage 2D
-            for ii = 1:4
-                tissue_mask = imgaussfilt(data_GmWmCsfSculpt(:,:,ii), param.sm_kern_tws) > 0.05;
-                tmp1 = data .* data_GmWmCsfSculpt(:,:,ii) .* tissue_mask;
-                twsP_signal(ii, :, :) = imgaussfilt(tmp1, param.sm_kern_tws) ./ imgaussfilt(data_GmWmCsfSculpt(:,:,ii), param.sm_kern_tws);
+            % Apply the explicit mask to combine tissue signals into the final signal
+            f_twsP_signal = sum(twsP_signal .* iexMask, 1);  % Element-wise multiplication and summation across tissues
+            f_twsP_signal(isnan(f_twsP_signal) | isinf(f_twsP_signal)) = 0;  % Handle NaN/Inf in the final signal
+            
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        case 2 % 2D Smoothing
+            % INPUT DIMENSIONS : ph [nb_pt x nb_pt] and tissue_proba [nb_tissue x nb_pt x nb_pt]
+            % OUTPUT DIMENSIONS : twsP_signal [nb_tissue x nb_pt x nb_pt] and f_twsP_signal [nb_pt x nb_pt]
+            
+            % Initialize the variable for the smoothed signal
+            twsP_signal = zeros([nb_tissue, nb_pt, nb_pt]);
+
+            % Create the explicit mask using the function aj_create_explicit_mask
+            iexMask = aj_create_explicit_mask(tissue_proba, 2);
+            
+            % Ensure tissue_proba has dimensions [N x N x nb_tissue]
+            dims = size(tissue_proba);
+            [nb_tissue, idx_min] = min(dims);
+            permute_order = [setdiff(1:3, idx_min), idx_min];
+            if idx_min ~= 3
+                tissue_proba = permute(tissue_proba, permute_order);
             end
+            
+            for ii = 1:nb_tissue
+                tissue_mask2 = imgaussfilt(tissue_proba(:,:,ii), 2*param.sm_kern_tws) > 0.05;
+                tmp1 = ph .* tissue_proba(:,:,ii) .* tissue_mask2;
+                
+                % CP
+                tissue_mask1 = imgaussfilt(tissue_proba(:,:,ii), param.sm_kern_tws) > 0.05;
+
+                % V1 - Handle NaN/Inf after filtering
+%                 tissue_mask1 = imgaussfilt(tissue_proba(:,:,ii), param.sm_kern_tws);
+%                 tissue_mask1(tissue_mask1 <= 0) = NaN;
+                
+                % V2
+%                 tissue_mask1 = imgaussfilt(tissue_proba(:,:,ii), param.sm_kern_tws);
+%                 tissue_mask1(tissue_mask1 <= 0.05) = NaN;
+
+                smoothed_signal = imgaussfilt(tmp1, param.sm_kern_tws) ./ tissue_mask1;
+                smoothed_signal(isnan(smoothed_signal) | isinf(smoothed_signal)) = 0;
+                twsP_signal(ii, :, :) = smoothed_signal;
+            end
+
+            % Apply the explicit mask to combine tissue signals into the final signal
+            f_twsP_signal = zeros(nb_pt, nb_pt);
+            for ii = 1:nb_tissue
+                % Combine the smoothed signals across tissues using the explicit mask
+                f_twsP_signal = f_twsP_signal + squeeze(twsP_signal(ii, :, :)) .* squeeze(iexMask(ii, :, :));
+            end
+
+            % Handle NaN/Inf in the final signal
+            f_twsP_signal(isnan(f_twsP_signal) | isinf(f_twsP_signal)) = 0;
         
-        case 3  % Lissage 3D
-            for ii = 1:4
-                tissue_mask = imgaussfilt3(data_GmWmCsfSculpt(:,:,:,ii), param.sm_kern_tws) > 0.05;
-                tmp1 = data .* data_GmWmCsfSculpt(:,:,:,ii) .* tissue_mask;
-                twsP_signal(ii, :, :, :) = imgaussfilt3(tmp1, param.sm_kern_tws) ./ imgaussfilt3(data_GmWmCsfSculpt(:,:,:,ii), param.sm_kern_tws);
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        case 3 % 3D Smoothing
+            % INPUT DIMENSIONS : ph [nb_pt x nb_pt x nb_pt] and tissue_proba [nb_tissue x N x N x N]
+            % OUTPUT DIMENSIONS : twsP_signal [nb_tissue x N x N x N] and f_twsP_signal [nb_pt x nb_pt x nb_pt]
+            
+            % Initialize the variable for the smoothed signal
+            twsP_signal = zeros([nb_tissue, nb_pt, nb_pt, nb_pt]);
+
+            % Create the explicit mask using the function aj_create_explicit_mask_1D
+            iexMask = aj_create_explicit_mask(tissue_proba, dim);
+                        
+            % Ensure tissue_proba has dimensions [N x N x N x nb_tissue]
+            dims = size(tissue_proba);
+            [nb_tissue, idx_min] = min(dims);
+            permute_order = [setdiff(1:4, idx_min), idx_min];
+            if idx_min ~= 4
+                tissue_proba = permute(tissue_proba, permute_order);
             end
+            
+            for ii = 1:nb_tissue
+                tissue_mask2 = imgaussfilt3(tissue_proba(:,:,:,ii), 2*param.sm_kern_tws) > 0.05;
+                tmp1 = ph .* tissue_proba(:,:,:,ii) .* tissue_mask2;
+
+                % CP
+                tissue_mask1 = imgaussfilt(tissue_proba(:,:,:,ii), param.sm_kern_tws) > 0.05;
+
+                % V1 - Handle NaN/Inf after filtering
+%                 tissue_mask1 = imgaussfilt3(tissue_proba(:,:,:,ii), param.sm_kern_tws);
+%                 tissue_mask1(tissue_mask1 <= 0) = NaN;
+                
+                % V2
+%                 tissue_mask1 = imgaussfilt(tissue_proba(:,:,:,ii), param.sm_kern_tws);
+%                 tissue_mask1(tissue_mask1 <= 0.05) = NaN;
+
+                smoothed_signal = imgaussfilt3(tmp1, param.sm_kern_tws) ./ tissue_mask1;
+                smoothed_signal(isnan(smoothed_signal) | isinf(smoothed_signal)) = 0;
+                
+                twsP_signal(ii, :, :, :) = smoothed_signal;
+            end
+            
+            % Apply the explicit mask to combine tissue signals into the final signal
+            f_twsP_signal = zeros(nb_pt, nb_pt, nb_pt);
+            for ii = 1:nb_tissue
+                % Combine the smoothed signals across tissues using the explicit mask
+                f_twsP_signal = f_twsP_signal + squeeze(twsP_signal(ii, :, :, :)) .* squeeze(iexMask(ii, :, :, :));
+            end
+
+            % Handle NaN/Inf in the final signal
+            f_twsP_signal(isnan(f_twsP_signal) | isinf(f_twsP_signal)) = 0;
 
         otherwise
-            error('La dimension des données n''est ni 1D, ni 2D, ni 3D');
+            error('Data dimension is neither 1D, 2D nor 3D');
     end
 end
-
-
-%     % Option d'affichage des résultats
-%     if flag.plot_fig
-%         switch num_dims
-%             case 1  % Affichage pour les données 1D
-%                 figure;
-%                 plot(data, 'b-', 'DisplayName', 'Données brutes');
-%                 hold on;
-%                 plot(twsP_signal(1,:), 'r-', 'DisplayName', 'Lissage Pondéré (GM)');
-%                 plot(twsP_signal(2,:), 'g-', 'DisplayName', 'Lissage Pondéré (WM)');
-%                 plot(twsP_signal(3,:), 'Color', [1, 0, 1], 'DisplayName', 'Lissage Pondéré (CSF)');
-%                 plot(twsP_signal(4,:), 'Color', [1, 0.5, 0], 'DisplayName', 'Lissage Pondéré (SCULPT)');
-%                 legend;
-%                 xlabel('Position');
-%                 ylabel('Valeur du signal');
-%                 title('Lissage Pondéré par les Tissus sur Données 1D');
-%                 hold off;
-% 
-%             case 2  % Affichage pour les données 2D
-%                 figure;
-%                 subplot(1, 2, 1);
-%                 imagesc(data);
-%                 title('Données brutes 2D');
-%                 colorbar;
-% 
-%                 subplot(1, 2, 2);
-%                 imagesc(twsP_signal(1,:,:));  % Affichage pour GM, par exemple
-%                 title('Lissage Pondéré (GM) 2D');
-%                 colorbar;
-% 
-%             case 3  % Affichage pour les données 3D
-%                 slice_idx = round(data_size(3) / 2);  % Afficher une coupe au milieu
-%                 figure;
-%                 subplot(1, 2, 1);
-%                 imagesc(data(:,:,slice_idx));
-%                 title('Données brutes 3D (Coupe)');
-%                 colorbar;
-% 
-%                 subplot(1, 2, 2);
-%                 imagesc(twsP_signal(1,:,:,slice_idx));  % Affichage pour GM, par exemple
-%                 title('Lissage Pondéré (GM) 3D (Coupe)');
-%                 colorbar;
-%         end
-%     end
-% 
-%     % Option de sauvegarde des résultats
-%     if flag.save_data
-%         output_filename = sprintf('smoothed_tissue_weighted_%dD.mat', num_dims);
-%         save(output_filename, 'twsP_signal');
-%     end

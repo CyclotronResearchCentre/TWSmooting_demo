@@ -1,89 +1,74 @@
-function [gsP_signal] = aj_smooth_gaussian(data, param)
-    % Fonction pour appliquer un lissage gaussien standard sur des données
-    % qui peuvent être en 1D, 2D, ou 3D.
-    
-    % Identifier la dimension des données
-    if isvector(data)
-        disp('Ceci est un vecteur.');
-        num_dims = 1;
-    elseif ismatrix(data)
-        disp('Ceci est une matrice.');
-        num_dims = 2;
-    else
-        data_size = size(data);
-        num_dims = length(data_size);  % Nombre de dimensions des données (1, 2 ou 3)
-        if num_dims == 3
-            disp('Ceci est une matrice 3D.');
-        end
-    end
+function [gsP_signal] = aj_smooth_gaussian(ph, param, dim)
+% Function to apply standard Gaussian smoothing to data
+% that can be in 1D, 2D, or 3D.
+%
+% INPUT:
+% ph: Data to smooth
+% param: Smoothing parameters (including kernel size)
+% dim: Dimension of the data (1D, 2D or 3D)
+%
+% OUTPUT:
+% gsP_signal: Smoothed signal
 
-    % Générer le noyau gaussien
-    wg = gausswin(param.sm_kern_gaussian);  % Noyau Gaussien pour le lissage
-    wg = wg / sum(wg);  % Normalisation
+    % Generate Gaussian kernel
+    wg = gausswin(param.sm_kern_gaussian);
+    wg = wg / sum(wg);
 
-    % Appliquer le lissage selon les dimensions des données
-    switch num_dims
-        case 1  % Lissage 1D
-            gsP_signal = filtfilt(wg, 1, data)';  % transpose to get 1xN vector
+    % Apply smoothing based on data dimensions
+    switch dim
+        case 1  % 1D Smoothing
+            % INPUT DIMENSIONS : ph [1 x nb_pt]
+            % OUTPUT DIMENSIONS : gsP_signal [nb_tissue x nb_pt]
+            
+            gsP_signal = filtfilt(wg, 1, ph);  % Apply 1D Gaussian smoothing
         
-        case 2  % Lissage 2D
-            % Appliquer le lissage successivement sur chaque dimension
-            gsP_signal = data;  % Initialiser avec les données d'origine
+        case 2  % 2D Smoothing
+            % INPUT DIMENSIONS : ph [nb_pt x nb_pt]
+            % OUTPUT DIMENSIONS : gsP_signal [nb_pt x nb_pt]
+            
+            % Apply Gaussian smoothing on each dimension
+            gsP_signal = ph;  % Initialize with the original data
             for i = 1:2
-                gsP_signal = imgaussfilt(gsP_signal, param.sm_kern_gaussian);  % Lissage Gaussien 2D
+                gsP_signal = imgaussfilt(gsP_signal, param.sm_kern_gaussian);  % 2D Gaussian smoothing
             end
 
-        case 3  % Lissage 3D
-            % Appliquer le lissage Gaussien 3D
-            gsP_signal = imgaussfilt3(data, param.sm_kern_gaussian);  % Lissage Gaussien 3D
+        case 3  % 3D Smoothing
+            % INPUT DIMENSIONS : ph [nb_pt x nb_pt x nb_pt]
+            % OUTPUT DIMENSIONS : gsP_signal [nb_pt x nb_pt x nb_pt]
+            
+            % Apply 3D Gaussian smoothing
+            gsP_signal = imgaussfilt3(ph, param.sm_kern_gaussian);  % 3D Gaussian smoothing
+            
+            figure;
+            imagesc(gsP_signal(:,:,64));
+            axis image;
+            colorbar;
+            title('Gaussian Smoothing');
+            xlabel('Position X');
+            ylabel('Position Y');
+            
+            figure;
+            slice(double(gsP_signal), size(gsP_signal,1)/2, size(gsP_signal,2)/2, size(gsP_signal,3)/2);
+            title('Gaussian Smoothed Signal (gsP\_signal)');
+            xlabel('X-axis'); ylabel('Y-axis'); zlabel('Z-axis');
+            colorbar;
+%             axis equal;
+%             shading interp;
 
         otherwise
-            error('La dimension des données n''est ni 1D, ni 2D, ni 3D');
+            error('Data dimension is neither 1D, 2D, nor 3D');
     end
 end
-%     % Option d'affichage des résultats
-%     if flag.plot_fig
-%         switch num_dims
-%             case 1
-%                 figure;
-%                 plot(data, 'b-', 'DisplayName', 'Données brutes');
-%                 hold on;
-%                 plot(gsP_signal, 'r-', 'DisplayName', 'Lissage Gaussien');
-%                 legend;
-%                 xlabel('Position');
-%                 ylabel('Valeur du signal');
-%                 title('Lissage Gaussien sur Données 1D');
-%                 hold off;
-% 
-%             case 2
-%                 figure;
-%                 subplot(1, 2, 1);
-%                 imagesc(data);
-%                 title('Données brutes 2D');
-%                 colorbar;
-% 
-%                 subplot(1, 2, 2);
-%                 imagesc(gsP_signal);
-%                 title('Lissage Gaussien 2D');
-%                 colorbar;
-% 
-%             case 3
-%                 figure;
-%                 slice_idx = round(data_size(3) / 2);  % Afficher une coupe au milieu
-%                 subplot(1, 2, 1);
-%                 imagesc(data(:, :, slice_idx));
-%                 title('Données brutes 3D (Coupe)');
-%                 colorbar;
-% 
-%                 subplot(1, 2, 2);
-%                 imagesc(gsP_signal(:, :, slice_idx));
-%                 title('Lissage Gaussien 3D (Coupe)');
-%                 colorbar;
+
+%% Identifier la dimension des données
+%     data_size = size(ph);
+%     if isvector(ph)
+%         num_dims = 1;
+%     elseif ismatrix(ph)
+%         num_dims = 2;
+%     else
+%         num_dims = length(data_size);
+%         if num_dims ~= 3
+%             error('Argument ph de mauvaises dimensions');
 %         end
-%     end
-% 
-%     % Option de sauvegarde des résultats
-%     if flag.save_data
-%         output_filename = sprintf('smoothed_gaussian_%dD.mat', num_dims);
-%         save(output_filename, 'gsP_signal');
 %     end

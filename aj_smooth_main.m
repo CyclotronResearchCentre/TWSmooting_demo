@@ -1,349 +1,167 @@
-% Main script pour exécuter les différentes méthodes de lissage sur des données 1D, 2D et 3D
+% In silico data
+% Main script to execute different smoothing methods on 1D, 2D and 3D data
 
-%% Step 0: Cleaning
-clear all;
+%% Step 0: Cleaning environment & setting up SPM path
 close all;
+clear;
 clc;
 
-%% Step 1: Clean up previous run files
 delete('results_phantom_1D_*.mat');
 delete('results_phantom_2D_*.mat');
 delete('results_phantom_3D_*.mat');
-fprintf('Previous run files deleted.\n');
 
-%% Step 2: Parameters Setting
+addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
+
+%% Step 1: Default parameter setup
 [param, flag] = aj_smooth_default();
 
-%% Step 3: Get all 1D, 2D and 3D available files
+%% Step 2: Load data from ph_data_XD.mat files
 current_path = pwd;
-ph_files_1D = dir(fullfile(current_path, 'phantom_1D_*.mat'));
-proba_files_1D = dir(fullfile(current_path, 'proba_1D_*.mat'));
-ph_files_2D = dir(fullfile(current_path, 'phantom_2D_*.mat'));
-proba_files_2D = dir(fullfile(current_path, 'proba_2D_*.mat'));
-ph_files_3D = dir(fullfile(current_path, 'phantom_3D_*.nii'));
-proba_files_3D = dir(fullfile(current_path, 'proba_3D_*.mat'));
+ph_files = dir(fullfile(current_path, 'ph_data_*.mat'));
 
-if isempty(ph_files_1D)
-    error('No 1D file found.\n');
-elseif isempty(ph_files_2D)
-    error('No 2D file found.\n');
-elseif isempty(ph_files_3D)
-    error('No 3D file found.\n');
+if isempty(ph_files)
+    error('No phantom file (ph_data_*.mat) found.');
 else
-    fprintf('Found %d 1D files.\n', length(ph_files_1D));
-    fprintf('Found %d 2D files.\n', length(ph_files_2D));
-    fprintf('Found %d 3D files.\n', length(ph_files_3D));
-end
-
-if length(ph_files_1D) ~= length(proba_files_1D)
-    error('Le nombre de fichiers de données 1D et de fichiers de probabilités 1D ne correspond pas.');
-elseif length(ph_files_2D) ~= length(proba_files_2D)
-    error('Le nombre de fichiers de données 2D et de fichiers de probabilités 2D ne correspond pas.');
-elseif length(ph_files_3D) ~= length(proba_files_3D)
-    error('Le nombre de fichiers de données 3D et de fichiers de probabilités 3D ne correspond pas.');
+    fprintf('Found %d phantom files.\n', length(ph_files));
 end
 
 %% 1D Smoothing
-% Boucle à travers tous les fichiers 1D
-for i = 1:length(ph_files_1D)
-    % Charger les données 1D
-    data_1D_file = fullfile(current_path, ph_files_1D(i).name); 
-    proba_1D_file = fullfile(current_path, proba_files_1D(i).name);
+for i = 1:1%length(ph_files)
+    % Load 1D data and tissue probabilities
+    data_file = fullfile(current_path, ph_files(i).name); 
+    fprintf('Loading data from %s...\n', data_file);
+    load(data_file, 'ph_data');
+
+    % Ensure the required fields exist
+    if isfield(ph_data, 'ph_1D') && isfield(ph_data, 'noisy_proba_map_1D')
+        ph_1D = ph_data.ph_1D;
+        proba_1D = ph_data.noisy_proba_map_1D;
+        dim = 1; % since 1D data was collected from the ph_data structure
+    else
+        error('1D data missing in file %s\n', ph_files(i).name);
+    end
     
-    fprintf('Chargement des données 1D depuis %s...\n', data_1D_file);
-    load(data_1D_file, 'data_1D');
+    % Ensure proba_1D has dimensions [nb_tissue x N]
+    proba_1D = squeeze(proba_1D);
+    nb_tissue = min(size(proba_1D));
+    if size(proba_1D, 1) ~= nb_tissue
+        proba_1D = proba_1D';
+    end
     
-    fprintf('Chargement des probabilités tissulaires 1D depuis %s...\n', proba_1D_file);
-    load(proba_1D_file, 'data_GmWmCsfSculpt_1D');
+    % Ensure ph_1D has dimensions [1 x N]
+    if isrow(ph_1D)
+        ph_1D = ph_1D';
+    end
     
-    % Vérifier la taille des données
-%     disp(['Taille des données 1D : ', num2str(size(data_1D))]);
-%     disp(['Taille des probabilités tissulaires 1D : ', num2str(size(data_GmWmCsfSculpt_1D))]);
+    % Call the smoothing functions for the 3 types
+    [gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal] = aj_smoothing(ph_1D, proba_1D, param, flag, dim);
 
-    % --------------------------------------------------------------------
-    % 1. Appliquer le lissage Gaussien standard
-    % --------------------------------------------------------------------
-    disp('Exécution du lissage Gaussien standard...');
-    gsP_signal = aj_smooth_gaussian(data_1D, param);
-
-    % --------------------------------------------------------------------
-    % 2. Appliquer le lissage pondéré par les tissus (TWS)
-    % --------------------------------------------------------------------
-    disp('Exécution du lissage pondéré par les tissus...');
-    [twsP_signal, final_signal] = aj_smooth_TWS(data_1D, data_GmWmCsfSculpt_1D, param);
-
-    % --------------------------------------------------------------------
-    % 3. Appliquer le lissage TSPOON
-    % --------------------------------------------------------------------
-    disp('Exécution du lissage TSPOON...');
-    tosP_signal = aj_smooth_TSPOON(data_1D, data_GmWmCsfSculpt_1D, param);
-
-    % --------------------------------------------------------------------
-    % Afficher les résultats pour ce fichier
-    % --------------------------------------------------------------------
+    % Display results if the flag is set
     if flag.plot_fig
-        figure('Name', sprintf('Résultats du fichier : %s', ph_files_1D(i).name));
-
-        subplot(3, 1, 1);
-        plot(data_1D, 'b-', 'DisplayName', 'Données brutes');
-        hold on;
-        plot(gsP_signal, 'r-', 'DisplayName', 'Lissage Gaussien');
-        legend;
-        xlabel('Position');
-        ylabel('Valeur du signal');
-        title('Lissage Gaussien');
-
-        subplot(3, 1, 2);
-        plot(data_1D, 'b-', 'DisplayName', 'Données brutes');
-        hold on;
-        plot(twsP_signal(1,:), 'r-', 'DisplayName', 'Lissage Pondéré (GM)');
-        plot(twsP_signal(2,:), 'g-', 'DisplayName', 'Lissage Pondéré (WM)');
-        plot(twsP_signal(3,:), 'm-', 'DisplayName', 'Lissage Pondéré (CSF)');
-        plot(twsP_signal(4,:), 'y-', 'DisplayName', 'Lissage Pondéré (Sculpt)');
-        plot(final_signal, 'Color', [0, 0.8, 0.8], 'DisplayName', 'VF');
-        legend;
-        xlabel('Position');
-        ylabel('Valeur du signal');
-        title('Lissage Pondéré par les Tissus');
-
-        subplot(3, 1, 3);
-        plot(data_1D, 'b-', 'DisplayName', 'Données brutes');
-        hold on;
-        plot(tosP_signal(1,:), 'r-', 'DisplayName', 'Lissage TSPOON (GM)');
-        plot(tosP_signal(2,:), 'g-', 'DisplayName', 'Lissage TSPOON (WM)');
-        plot(tosP_signal(3,:), 'm-', 'DisplayName', 'Lissage TSPOON (CSF)');
-        legend;
-        xlabel('Position');
-        ylabel('Valeur du signal');
-        title('Lissage TSPOON');
-
-        hold off;
+        aj_smoothing_plot(ph_files(i).name, gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal, ph_1D, dim);
     end
-    
-    % Have to reorganize per tissue instead of per subject
-%     for jj=1:3
-%         ggsP_GmWmCsf{jj}(ii,:) = gsP_GmWmCsf{ii}(jj,:);
-%         pP_GmWmCsf{jj}(ii,:) = P_GmWmCsf{ii}(jj,:);
-%     end
-%     for jj=1:2
-%         ttwsP_signal{jj}(ii,:) = twsP_signal{ii}(jj,:);
-%         ttosP_signal{jj}(ii,:) = tosP_signal{ii}(jj,:);
-%     end
 
-    % Sauvegarder les résultats dans un fichier .mat spécifique à ce fichier
+    % Save the results into a specific .mat file
     if flag.save_data
-        output_filename = sprintf('results_%s.mat', ph_files_1D(i).name(1:end-4));
+        output_filename = sprintf('results_%s_1D.mat', ph_files(i).name(1:end-4));
         save(output_filename, 'gsP_signal', 'twsP_signal', 'tosP_signal');
+        fprintf('Results saved in %s\n', output_filename);
     end
     
-    fprintf('Résultats sauvegardés dans %s\n', output_filename);
+    % Reorganize signals per type rather than per subject
+    [ggsP_GmWmCsf, ttwsP_signal, ttosP_signal] = aj_reorganize_signals_by_tissue(gsP_signal, twsP_signal, tosP_signal, dim, nb_tissue);
 end
 
-disp('Traitement terminé pour tous les fichiers 1D.');
+disp('Processing completed for all 1D files.');
 
 %% 2D Processing
-% Boucle pour traiter les fichiers 2D
-for i = 1:length(ph_files_2D)
-    % Charger les données 2D
-    data_2D_file = fullfile(current_path, ph_files_2D(i).name);
-    proba_2D_file = fullfile(current_path, proba_files_2D(i).name);
+for i = 1:1%length(ph_files)
+    % Load 2D data and tissue probabilities
+    data_file = fullfile(current_path, ph_files(i).name); 
+    fprintf('Loading data from %s...\n', data_file);
+    load(data_file, 'ph_data');
+
+    % Ensure the required fields exist
+    if isfield(ph_data, 'ph_2D') && isfield(ph_data, 'noisy_proba_map_2D')
+        ph_2D = ph_data.ph_2D; % [N x N] matrix
+        proba_2D = ph_data.noisy_proba_map_2D; % [N x N x nb_tissue] matrix
+        dim = 2; % since 2D data was collected from the ph_data structure
+    else
+        error('2D data missing in file %s\n', ph_files(i).name);
+    end
     
-    fprintf('Chargement des données 2D depuis %s...\n', data_2D_file);
-    load(data_2D_file, 'data_2D');
+    % Ensure proba_2D has dimensions [nb_tissue x N x N]
+    dims = size(proba_2D);
+    [nb_tissue, idx_min] = min(dims);
+    permute_order = [idx_min, setdiff(1:3, idx_min)];
+    if idx_min ~= 1
+        proba_2D = permute(proba_2D, permute_order);
+    end
     
-    fprintf('Chargement des probabilités tissulaires 2D depuis %s...\n', proba_2D_file);
-    load(proba_2D_file, 'data_GmWmCsfSculpt_2D');
+    % Call the smoothing functions for the 3 types
+    [gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal] = ...
+        aj_smoothing(ph_2D, proba_2D, param, flag, dim);
     
-    % Vérifier la taille des données
-%     disp(['Taille des données 2D : ', num2str(size(data_2D))]);
-%     disp(['Taille des probabilités tissulaires 2D : ', num2str(size(data_GmWmCsfSculpt_2D))]);
-
-    % --------------------------------------------------------------------
-    % 1. Appliquer le lissage Gaussien standard
-    % --------------------------------------------------------------------
-    disp('Exécution du lissage Gaussien standard...');
-    gsP_signal = aj_smooth_gaussian(data_2D, param);
-
-    % --------------------------------------------------------------------
-    % 2. Appliquer le lissage pondéré par les tissus (TWS)
-    % --------------------------------------------------------------------
-    disp('Exécution du lissage pondéré par les tissus...');
-    twsP_signal = aj_smooth_TWS(data_2D, data_GmWmCsfSculpt_2D, param);
-
-    % --------------------------------------------------------------------
-    % 3. Appliquer le lissage TSPOON
-    % --------------------------------------------------------------------
-    disp('Exécution du lissage TSPOON...');
-    tosP_signal = aj_smooth_TSPOON(data_2D, data_GmWmCsfSculpt_2D, param);
-
-    % --------------------------------------------------------------------
-    % Afficher les résultats pour ce fichier
-    % --------------------------------------------------------------------
+    % Display results if the flag is set
     if flag.plot_fig
-        figure('Name', sprintf('Résultats du fichier : %s', ph_files_2D(i).name));
-
-        % Lissage Gaussien
-        subplot(3, 1, 1);
-        imagesc(gsP_signal);  % Affichage des données 2D
-        axis image;  % Pour maintenir le rapport d'aspect
-        colorbar;  % Ajouter une barre de couleur pour la légende
-        title('Lissage Gaussien');
-        xlabel('Position X');
-        ylabel('Position Y');
-
-        % Lissage pondéré par les tissus (TWS)
-        subplot(3, 1, 2);
-        imagesc(twsP_signal(:,:,1));  % Affichage pour le premier tissu (GM)
-        axis image;
-        colorbar;
-        title('Lissage Pondéré par les Tissus (GM)');
-        xlabel('Position X');
-        ylabel('Position Y');
-
-        % Vous pouvez ajouter des sous-graphes pour les autres tissus (WM, CSF, Sculpt)
-        % Par exemple, pour le tissu WM :
-        % subplot(3, 2, 3);
-        % imagesc(twsP_signal(:,:,2));  % WM
-        % axis image;
-        % colorbar;
-        % title('Lissage Pondéré par les Tissus (WM)');
-        % xlabel('Position X');
-        % ylabel('Position Y');
-
-        % Lissage TSPOON
-        subplot(3, 1, 3);
-        imagesc(tosP_signal(:,:,1));  % Affichage pour le premier tissu (GM)
-        axis image;
-        colorbar;
-        title('Lissage TSPOON (GM)');
-        xlabel('Position X');
-        ylabel('Position Y');
-
-        % Ajouter des sous-graphes pour les autres tissus (WM, CSF)
-        % subplot(3, 2, 4);
-        % imagesc(tosP_signal(:,:,2));  % WM
-        % axis image;
-        % colorbar;
-        % title('Lissage TSPOON (WM)');
+        aj_smoothing_plot(ph_files(i).name, gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal, ph_1D, dim);
     end
 
-    % Sauvegarder les résultats dans un fichier .mat spécifique à ce fichier
+    % Save the results into a specific .mat file
     if flag.save_data
-        output_filename = sprintf('results_%s.mat', ph_files_2D(i).name(1:end-4));
+        output_filename = sprintf('results_2D_%s.mat', ph_files(i).name(1:end-4));
         save(output_filename, 'gsP_signal', 'twsP_signal', 'tosP_signal');
+        fprintf('Results saved in %s\n', output_filename);
     end
-    
-    fprintf('Résultats sauvegardés dans %s\n', output_filename);
+    % Reorganize signals per type rather than per subject
+    [ggsP_GmWmCsf, ttwsP_signal, ttosP_signal] = aj_reorganize_signals_by_tissue(gsP_signal, twsP_signal, tosP_signal, dim, nb_tissue);
 end
 
-disp('Traitement terminé pour tous les fichiers 2D.');
+disp('Processing completed for all 2D files.');
 
 %% 3D Smoothing
-% Boucle pour traiter les fichiers 3D
-% for i = 1:length(files_3D)
-%     data_3D_file = fullfile(current_path, files_3D(i).name);
-%     V = spm_vol(data_3D_file);  % Charger les données NIfTI
-%     data_3D = spm_read_vols(V);  % Lire les volumes
-% 
-%     proba_3D_file = fullfile(current_path, strrep(files_3D(i).name, 'phantom_3D_', 'proba_3D_'));
-%     V_proba = spm_vol(proba_3D_file);
-%     data_GmWmCsfSculpt_3D = spm_read_vols(V_proba);  % Probabilités tissulaires 3D
-% 
-%     % Lissage Pondéré par les Tissus pour données 3D
-%     twsP_signal = aj_smooth_TWS(data_3D, data_GmWmCsfSculpt_3D, param, flag);
-% end
+clc; close all;
+for i = 1:1%length(ph_files)
+    % Load 3D data and tissue probabilities
+    data_file = fullfile(current_path, ph_files(i).name); 
+    fprintf('Loading data from %s...\n', data_file);
+    load(data_file, 'ph_data');
 
-for i = 1:length(ph_files_3D)
-    % Charger les données 3D
-    data_3D_file = fullfile(current_path, ph_files_3D(i).name);
-    proba_3D_file = fullfile(current_path, proba_files_3D(i).name);
+    % Ensure the required fields exist
+    if isfield(ph_data, 'ph_3D') && isfield(ph_data, 'noisy_proba_map_3D')
+        ph_3D = ph_data.ph_3D; % [N x N x N] matrix
+        proba_3D = ph_data.noisy_proba_map_3D; % [N x N x N x nb_tissue] matrix
+        dim = 3; % since 3D data was collected from the ph_data structure
+    else
+        error('3D data missing in file %s\n', ph_files(i).name);
+    end
     
-    fprintf('Chargement des données 3D depuis %s...\n', data_3D_file);
-    load(data_3D_file, 'data_3D');
+    % Ensure proba_3D has dimensions [nb_tissue x N x N x N]
+    dims = size(proba_3D);
+    [nb_tissue, idx_min] = min(dims);
+    permute_order = [idx_min, setdiff(1:4, idx_min)];
+    if idx_min ~= 1
+        proba_3D = permute(proba_3D, permute_order);
+    end
     
-    fprintf('Chargement des probabilités tissulaires 3D depuis %s...\n', proba_3D_file);
-    load(proba_3D_file, 'data_GmWmCsfSculpt_3D');
-    
-    % Vérifier la taille des données
-%     disp(['Taille des données 3D : ', num2str(size(data_3D))]);
-%     disp(['Taille des probabilités tissulaires 3D : ', num2str(size(data_GmWmCsfSculpt_3D))]);
+    % Call the smoothing functions for the 3 types
+    [gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal] = ...
+        aj_smoothing(ph_3D, proba_3D, param, flag, dim);
 
-    % --------------------------------------------------------------------
-    % 1. Appliquer le lissage Gaussien standard
-    % --------------------------------------------------------------------
-    disp('Exécution du lissage Gaussien standard...');
-    gsP_signal = aj_smooth_gaussian(data_3D, param);
-
-    % --------------------------------------------------------------------
-    % 2. Appliquer le lissage pondéré par les tissus (TWS)
-    % --------------------------------------------------------------------
-    disp('Exécution du lissage pondéré par les tissus...');
-    % twsP_signal = aj_smooth_TWS(data_3D, data_GmWmCsfSculpt_3D, param);
-
-    % --------------------------------------------------------------------
-    % 3. Appliquer le lissage TSPOON
-    % --------------------------------------------------------------------
-    disp('Exécution du lissage TSPOON...');
-    % tosP_signal = aj_smooth_TSPOON(data_3D, data_GmWmCsfSculpt_3D, param);
-
-    % --------------------------------------------------------------------
-    % Afficher les résultats pour ce fichier
-    % --------------------------------------------------------------------
+    % Display results if the flag is set
     if flag.plot_fig
-        figure('Name', sprintf('Résultats du fichier : %s', ph_files_3D(i).name));
-
-        % Lissage Gaussien
-        subplot(3, 1, 1);
-        imagesc(gsP_signal);  % Affichage des données 2D
-        axis image;  % Pour maintenir le rapport d'aspect
-        colorbar;  % Ajouter une barre de couleur pour la légende
-        title('Lissage Gaussien');
-        xlabel('Position X');
-        ylabel('Position Y');
-
-        % Lissage pondéré par les tissus (TWS)
-        subplot(3, 1, 2);
-        imagesc(twsP_signal(:,:,1));  % Affichage pour le premier tissu (GM)
-        axis image;
-        colorbar;
-        title('Lissage Pondéré par les Tissus (GM)');
-        xlabel('Position X');
-        ylabel('Position Y');
-
-        % Vous pouvez ajouter des sous-graphes pour les autres tissus (WM, CSF, Sculpt)
-        % Par exemple, pour le tissu WM :
-        % subplot(3, 2, 3);
-        % imagesc(twsP_signal(:,:,2));  % WM
-        % axis image;
-        % colorbar;
-        % title('Lissage Pondéré par les Tissus (WM)');
-        % xlabel('Position X');
-        % ylabel('Position Y');
-
-        % Lissage TSPOON
-        subplot(3, 1, 3);
-        imagesc(tosP_signal(:,:,1));  % Affichage pour le premier tissu (GM)
-        axis image;
-        colorbar;
-        title('Lissage TSPOON (GM)');
-        xlabel('Position X');
-        ylabel('Position Y');
-
-        % Ajouter des sous-graphes pour les autres tissus (WM, CSF)
-        % subplot(3, 2, 4);
-        % imagesc(tosP_signal(:,:,2));  % WM
-        % axis image;
-        % colorbar;
-        % title('Lissage TSPOON (WM)');
+        aj_smoothing_plot(ph_files(i).name, gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal, ph_1D, dim);
     end
 
-    % Sauvegarder les résultats dans un fichier .mat spécifique à ce fichier
+    % Save the results into a specific .mat file
     if flag.save_data
-        output_filename = sprintf('results_%s.mat', ph_files_3D(i).name(1:end-4));
+        output_filename = sprintf('results_3D_%s.mat', ph_files(i).name(1:end-4));
         save(output_filename, 'gsP_signal', 'twsP_signal', 'tosP_signal');
+        fprintf('Results saved in %s\n', output_filename);
     end
     
-    fprintf('Résultats sauvegardés dans %s\n', output_filename);
+    % Reorganize signals per type rather than per subject
+    [ggsP_GmWmCsf, ttwsP_signal, ttosP_signal] = aj_reorganize_signals_by_tissue(gsP_signal, twsP_signal, tosP_signal, dim, nb_tissue);
 end
 
-disp('Traitement terminé pour tous les fichiers 3D.');
+disp('Processing completed for all 3D files.');
