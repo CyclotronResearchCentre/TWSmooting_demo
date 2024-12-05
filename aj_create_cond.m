@@ -1,7 +1,12 @@
 % Create SPM's multiple conditions files
 % Codes: Multimodal integration of M/EEG and f/MRI data in SPM12 of gllmflndn ; https://github.com/spm/MultimodalScripts/tree/master
 %--------------------------------------------------------------------------
-clear;clc;
+% clear;clc;
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
 
 base_dir = 'C:\Users\antoi\Documents\master_thesis\MATLAB\ds000117';
 work_bids_root = fullfile(base_dir, 'work_copies', 'openneuro.org', 'ds000117');
@@ -16,7 +21,7 @@ trialtypes = {'Famous','Unfamiliar','Scrambled'}; % impose order
 
 outpth = 'C:\Users\antoi\Documents\master_thesis\MATLAB\ds000117\work_copies\openneuro.org\ds000117\derivatives\preprocessing';
 
-for s = 1:1%nsub
+for s = 3:4%nsub
     for r = 1:nrun  
             d = spm_load(char(spm_BIDS(work_bids_root,'data',... 
     'modality','func','type','events','sub',subs{s},'run',runs{r}))); 
