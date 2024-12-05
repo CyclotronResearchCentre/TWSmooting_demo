@@ -1,19 +1,24 @@
 function [param, flag] = aj_smooth_default()
+%--------------------------------------------------------------------------
+% Function to set default parameters and flags before computing smoothing
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
 
 % Parameters Definitions
-param.sm_kern_gaussian = 3;  % Taille du noyau de lissage gaussien pour Gaussian
-param.sm_kern_tws = 6;       % Taille du noyau de lissage gaussien pour TWS
-param.sm_kern_tspoon = 6;    % Taille du noyau de lissage gaussien pour TSPOON
+param.fwhm_gs = 3;  % Kernel width for Gaussian Smoothing (GS)
+param.fwhm_tws = 3;       % Kernel width for Tissue-Weighted Smoothing (TWS)
+param.fwhm_tspoon = 3;    % Kernel width for Tissue-SPecific smOOthing compeNsated (TSPOON)
 
-% fonction filtfilt (filtrage passe-bas par double filtrage) nécessite 
-% que la longueur des données soit plus grande que trois fois la longueur du noyau de filtre
+param.l_TC = (1:2);
 
 % Flag: Used to manage additional behaviors
-flag.plot_fig = true;           % Flag to plot figures (set to true for plotting)
-flag.save_data = true;          % Flag to save the results (set to true for saving)
+flag.plot_fig = false;           % Flag to plot figures (set to true for plotting)
 
-flag.gaussian = true;           % Flag to compute gaussian smoothing
-flag.tws = true;                % Flag to compute Tissue Weighted Smoothing
+flag.gaussian = false;           % Flag to compute gaussian smoothing
+flag.tws = false;                % Flag to compute Tissue-Weighted Smoothing
 flag.tspoon = true;             % Flag to compute Tissue-SPecific smOOthing compeNsated
 
 end

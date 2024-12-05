@@ -1,130 +1,171 @@
 % ds000117 data
 % Main script to execute different smoothing methods on 3D data
-
-%% Cleaning environment & setting up SPM path
-close all;
-clear;
-clc;
-
+%
+%--------------------------------------------------------------------------
+% ess0001 F-contrast named Canonical HRF effects of interest, which tests
+% if there is any significant activation across the defined regressors.
+%
+% represent the linear combinations of the parameter estimates (e.g., 
+% contrasts like Faces>Scrambled Faces or conditions like Famous, Unfamiliar, etc.).
+% to see the impact of smoothing on the statistical results derived from specific conditions or task contrasts. 
+% The edges between activated and non-activated areas (often at the gray/white matter boundary) are highlighted in these images
+% con_0002 represents the contrast for Faces > Scrambled Faces.
+% con_0003 is the contrast for Famous.
+% con_0004 corresponds to Unfamiliar.
+% con_0005 represents Scrambled.
+%
+%--------------------------------------------------------------------------
+% REFERENCES
+% BIDS: Gorgolewski, K.J., et al. (2016). BIDS: The brain imaging data structure. A standard for organizing and describing outputs of neuroimaging experiments. Scientific Data, 3, 160044.
+% ds000117: Wakeman, D.G. & Henson, R.N. (2015). A multi-subject, multi-modal human neuroimaging dataset. Sci. Data 2:150001 doi: 10.1038/sdata.2015.1
+% ds000117: Henson, R.N., Wakeman, D.G., Litvak, V. & Friston, K.J. (2011). A Parametric Empirical Bayesian framework for the EEG/MEG inverse problem: generative models for multisubject and multimodal integration. Frontiers in Human Neuroscience, 5, 76, 1-16.
+% ds000117: Chapter 42 of the SPM12 manual (http://www.fil.ion.ucl.ac.uk/spm/doc/manual.pdf)
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
+%% In Silico Data
+% Cleaning environment & setting up SPM path
+close all; clear; clc;
 addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
-
-%% Find nii data from BIDS derivatives folder
-% data_path = fullfile(pwd, 'data', 'ds000117');
-% wfunc_paths = spm_select('FPList', data_path, '^wsub-01_ses-mri_task-facerecognition_run-.*\.nii$');
-% wmean_paths = spm_select('FPList', data_path, '^wmeansub-01_ses-mri_task-facerecognition_run-.*\.nii$');
-% mpm_paths = spm_select('FPList', data_path, '^mwc.*sub-01_ses-mri_acq-mprage_T1w\.nii$');
-
-% Define the root directory of the BIDS dataset and derivatives
-bids_root = 'C:\Users\antoi\Documents\master_thesis\MATLAB\ds000117\work_copies\openneuro.org\ds000117';
-derivatives_path = fullfile(bids_root, 'derivatives', 'preprocessing');
-
-% Load the BIDS structure using spm_BIDS
-bids_info = spm_BIDS(bids_root);
-
-% Define the subject and session you are working on
-subject = 'sub-03';
-session = 'ses-mri';
-
-% Fetch the files from the derivatives folder using aj_BIDS_select
-wfunc_paths = aj_BIDS_select(bids_info, 'sub', subject, 'ses', session, ...
-    'modality', 'func', 'pattern', 'wsub-*.nii', 'derivatives', derivatives_path);
-wmean_paths = aj_BIDS_select(bids_info, 'sub', subject, 'ses', session, ...
-    'modality', 'func', 'pattern', 'wmeansub-*.nii', 'derivatives', derivatives_path);
-mpm_paths = aj_BIDS_select(bids_info, 'sub', subject, 'ses', session, ...
-    'modality', 'anat', 'pattern', 'mwc*.nii', 'derivatives', derivatives_path);
-
-%% Load the 3D data for functional images and anatomical masks
 [param, flag] = aj_smooth_default();
 
-for i = 1:numel(wfunc_paths)
-    % Load the functional data
-    wfunc_vol = spm_vol(wfunc_paths{i}); % Get volume information
-    wfunc_3D = spm_read_vols(wfunc_vol(1)); % Read volume data
+% Paths to access to the data
+ds_dir = 'D:\Master_Thesis\Data\InSilicoData';
+param.outDerivName = 'xxx';
+BIDS_ph = fullfile(ds_dir, 'derivatives', param.outDerivName);
 
-    % Load the mean functional data (if needed)
-    wmean_vol = spm_vol(wmean_paths{i});
-    wmean_3D = spm_read_vols(wmean_vol);
-    
-    % Load the anatomical probability map (MPM)
-    mpm_vol = spm_vol(mpm_paths{i}); 
-    mpm_3D = spm_read_vols(mpm_vol);
+% Use BIDS to get data information
+BIDS = spm_BIDS(ds_dir);
+nsub = length(BIDS.subjects);
 
-    % Perform the Gaussian smoothing
-    dims = size(mpm_3D);
-    [nb_tissue, idx_min] = min(dims);
-    permute_order = [idx_min, setdiff(1:4, idx_min)];
-    if idx_min ~= 1
-        mpm_3D = permute(mpm_3D, permute_order);
-    end
+% Set up the MPM names list
+MPMs_listname = {'MTsat', 'PDmap', 'R1map', 'R2starmap'};
+nMPMnames = length(MPMs_listname);
 
-    dim = 3; % Data are in 3D
+% Looking for warped MPMs and TC segmentation maps for each subject
+wMPM_paths = cell(nsub,1);
+TCseg_paths = cell(nsub,1);
 
-    % Call smoothing functions with loaded NIfTI data
-    [gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal] = ...
-        aj_smoothing(wfunc_3D, mpm_3D, param, flag, dim);
 
-    % Display results if the flag is activated
-    if flag.plot_fig
-        aj_smoothing_plot(wfunc_paths{i}, gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal, [], dim);
-    end
+%% Public OpenNeuro dataset: ds000117 (fMRI)
+% Cleaning environment & setting up SPM path
+close all; clear; clc;
+addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
+[param, flag] = aj_smooth_default();
 
-    % Sauvegarder les résultats dans un fichier .mat
-    if flag.save_data
-        output_filename = sprintf('results_3D_%s.mat', wfunc_paths(i,end-4:end));  % Générer un nom de fichier
-        save(output_filename, 'gsP_signal', 'twsP_signal', 'tosP_signal');
-        fprintf('Results saved in %s\n', output_filename);
-    end
+% Paths to access to the data
+work_bids_root = 'C:\Users\antoi\Documents\master_thesis\MATLAB\ds000117\work_copies\openneuro.org\ds000117';
+param.outDerivName = '1stat';
+stat_path = fullfile(work_bids_root, 'derivatives', param.outDerivName);
+preproc_path = fullfile(work_bids_root, 'derivatives', 'preprocessing');
 
-    % Réorganiser les signaux par type de tissu
-    [ggsP_GmWmCsf, ttwsP_signal, ttosP_signal] = aj_reorganize_signals_by_tissue(gsP_signal, twsP_signal, tosP_signal, dim, nb_tissue);
+% Use BIDS to get data information
+BIDS_stat = spm_BIDS(stat_path);
+BIDS_preproc = spm_BIDS(preproc_path);
+nsub = length(BIDS_stat.subjects); % stat is the most limiting for number of subjects
+
+% Looking for constrat MPMs and modulated warped TC for each subject
+conMPM_paths = cell(nsub,1);
+mwTC_paths = cell(nsub,1);
+for i = 1:nsub
+    conMPM_paths{i} = spm_select('FPListRec', fullfile(BIDS_stat.subjects(i).path,'func'), '^.*con.*\.nii$');
+    mwTC_paths{i} = spm_select('FPListRec', fullfile(BIDS_preproc.subjects(i).path, 'anat'), '^.*mwc.*\.nii$'); % well sorted
 end
 
-disp('Processing completed for all 3D files.');
+% Initialize cell arrays to store the smoothed results for all subjects
+gs_imgaussfilt3_paths = cell(nsub,1);
+gs_spm_paths = cell(nsub,1);
+tws_paths = cell(nsub,1);
+smwTC_paths = cell(nsub,1);
+tspoon_paths = cell(nsub,1);
 
-
-
-%% BACK UP 3D Smoothing
-for i = 1:1%length(ph_files)
-    % Load 3D data and tissue probabilities
-    data_file = fullfile(current_path, ph_files(i).name); 
-    fprintf('Loading data from %s...\n', data_file);
-    load(data_file, 'ph_data');
-
-    % Ensure the required fields exist
-    if isfield(ph_data, 'ph_3D') && isfield(ph_data, 'noisy_proba_map_3D')
-        wfunc_3D = ph_data.ph_3D; % [N x N x N] matrix
-        mpm_3D = ph_data.noisy_proba_map_3D; % [N x N x N x nb_tissue] matrix
-        dim = 3; % since 3D data was collected from the ph_data structure
-    else
-        error('3D data missing in file %s\n', ph_files(i).name);
-    end
-    
-    % Ensure proba_3D has dimensions [nb_tissue x N x N x N]
-    dims = size(mpm_3D);
-    [nb_tissue, idx_min] = min(dims);
-    permute_order = [idx_min, setdiff(1:4, idx_min)];
-    if idx_min ~= 1
-        mpm_3D = permute(mpm_3D, permute_order);
-    end
-    
-    % Call the smoothing functions for the 3 types
-    [gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal] = ...
-        aj_smoothing(wfunc_3D, mpm_3D, param, flag, dim);
-
-    % Display results if the flag is set
-    if flag.plot_fig
-        aj_smoothing_plot(ph_files(i).name, gsP_signal, twsP_signal, f_twsP_signal, tosP_signal, f_tosP_signal, ph_1D, dim);
-    end
-
-    % Save the results into a specific .mat file
-    if flag.save_data
-        output_filename = sprintf('results_3D_%s.mat', ph_files(i).name(1:end-4));
-        save(output_filename, 'gsP_signal', 'twsP_signal', 'tosP_signal');
-        fprintf('Results saved in %s\n', output_filename);
-    end
-    
-    % Reorganize signals per type rather than per subject
-    [ggsP_GmWmCsf, ttwsP_signal, ttosP_signal] = aj_reorganize_signals_by_tissue(gsP_signal, twsP_signal, tosP_signal, dim, nb_tissue);
+% Start parallel pool if not already open
+if isempty(gcp('nocreate'))
+    parpool; % Create a default parallel pool
 end
 
-disp('Processing completed for all 3D files.');
+% Call smoothing functions for each subject with loaded NIfTI data
+parfor i = 1:nsub
+    fprintf('Executing smoothing for subject %d...\n', i);
+    
+    [gs_imgaussfilt3_paths{i}, gs_spm_paths{i},...  % Gaussian results
+        tws_paths{i}, smwTC_paths{i},...            % TWS results
+        tspoon_paths{i}] = ...                      % TSPOON results
+        aj_smoothing(conMPM_paths{i}, mwTC_paths{i}, param, flag, 3); % 3D so dim = 3
+end
+
+delete(gcp('nocreate'));
+
+%% Published Callaghan dataset: AgingData (qMRI)
+% REFERENCES
+% M.F. Callaghan and al. (2014) http://dx.doi.org/10.1016/j.neurobiolaging.2014.02.008
+% https://hackmd.io/u_vOEzA8TzS1yGj52V6Txg
+% https://github.com/CyclotronResearchCentre/BIDS_AgingData
+
+% Cleaning environment & setting up SPM path
+close all; clear; clc;
+addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
+[param, flag] = aj_smooth_default();
+
+% Paths to access to the data
+ds_dir = 'D:\Master_Thesis\Data\BIDS_AgingData';
+param.outDerivName = 'SPM12_dartel';
+BIDS_warped_data = fullfile(ds_dir, 'derivatives', param.outDerivName);
+
+% Use BIDS to get data information
+BIDS_stat = spm_BIDS(BIDS_warped_data);
+nsub = length(BIDS_stat.subjects);
+
+% Set up the MPM names list
+MPMs_listname = {'MTsat', 'PDmap', 'R1map', 'R2starmap'};
+nMPMnames = length(MPMs_listname);
+
+% Looking for warped MPMs and TC segmentation maps for each subject
+wMPM_paths = cell(nsub,1);
+TCseg_paths = cell(nsub,1);
+parfor i = 1:nsub
+    CSF_path_i = spm_select('FPListRec', fullfile(BIDS_stat.subjects(i).path,'anat'), '^*CSF_probseg*\.nii$');
+    GM_path_i = spm_select('FPListRec', fullfile(BIDS_stat.subjects(i).path,'anat'), '^*GM_probseg*\.nii$');
+    WM_path_i = spm_select('FPListRec', fullfile(BIDS_stat.subjects(i).path,'anat'), '^*WM_probseg*\.nii$');
+    TCseg_paths{i} = char(GM_path_i, WM_path_i, CSF_path_i); % well sorted
+    
+    for ii = 1:nMPMnames
+        % Get the file list for current subject and MPM
+        file_list = spm_select('FPListRec', fullfile(BIDS_stat.subjects(i).path,'anat'), ['^*' MPMs_listname{ii} '*\.nii$']);
+        if ~isempty(file_list)
+            % Ensure wMPM_paths{i} is a character array
+            if isempty(wMPM_paths{i})
+                wMPM_paths{i} = file_list; % Initialize with first file list
+            else
+                % Concatenate character arrays vertically
+                wMPM_paths{i} = char(wMPM_paths{i}, file_list); 
+            end
+        end
+    end
+end
+
+% Initialize cell arrays to store the smoothed results for all subjects
+gs_imgaussfilt3_paths = cell(nsub,1);
+gs_spm_paths = cell(nsub,1);
+tws_paths = cell(nsub,1);
+smwTC_paths = cell(nsub,1);
+tspoon_paths = cell(nsub,1);
+
+% Start parallel pool if not already open
+if isempty(gcp('nocreate'))
+    parpool; % Create a default parallel pool
+end
+
+% Parallel loop for smoothing
+parfor i = 51:138
+    fprintf('Executing smoothing for subject %d...\n', i);
+    
+    [gs_imgaussfilt3_paths{i}, gs_spm_paths{i},...  % Gaussian results
+        tws_paths{i}, smwTC_paths{i},...            % TWS results
+        tspoon_paths{i}] = ...                      % TSPOON results
+        aj_smoothing(wMPM_paths{i}, TCseg_paths{i}, param, flag, 3); % 3D so dim = 3
+end
+
+delete(gcp('nocreate'));
