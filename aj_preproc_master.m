@@ -1,5 +1,6 @@
 %--------------------------------------------------------------------------
-% Main script to preprocess data from ds000117
+% Main script to preprocess structural and functional data from ds000117
+% without smoothing.
 %
 % PROCESS
 % This script automates the preprocessing of fMRI data and subsequent
@@ -10,6 +11,7 @@
 % preprocessing, the results are reformatted to comply with the BIDS 
 % standard.
 %
+%--------------------------------------------------------------------------
 % REFERENCES
 % SPM: Friston, K.J., et al. (1994). Statistical parametric maps in functional imaging: A general linear approach. Human Brain Mapping, 2, 189-210.
 % matlabbatch{1}: Friston, K.J., et al. (1996). https://doi.org/10.1002/mrm.1910350312
@@ -25,9 +27,6 @@
 %           Frontiers in Human Neuroscience, 5, 76, 1-16.
 % ds000117: Chapter 42 of the SPM12 manual (http://www.fil.ion.ucl.ac.uk/spm/doc/manual.pdf)
 % Codes: Multimodal integration of M/EEG and f/MRI data in SPM12 of gllmflndn ; https://github.com/spm/MultimodalScripts/tree/master
-%--------------------------------------------------------------------------
-% FUTURE DEV
-% use bidsme instead of aj_bidsify_batchresults
 %--------------------------------------------------------------------------
 % Copyright (C) 2017 Cyclotron Research Centre
 % Written by A.J.

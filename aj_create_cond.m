@@ -1,7 +1,6 @@
 % Create SPM's multiple conditions files
-% Codes: Multimodal integration of M/EEG and f/MRI data in SPM12 of gllmflndn ; https://github.com/spm/MultimodalScripts/tree/master
-%--------------------------------------------------------------------------
-% clear;clc;
+% Codes: Multimodal integration of M/EEG and f/MRI data in SPM12 of gllmflndn
+% https://github.com/spm/MultimodalScripts/tree/master
 %--------------------------------------------------------------------------
 % Copyright (C) 2017 Cyclotron Research Centre
 % Written by A.J.

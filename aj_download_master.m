@@ -1,9 +1,10 @@
-% Main function to download BIDS files and manage zip files
-%__________________________________________________________________________
-
-clear;
-clc;
-
+% Main function to download BIDS files from the shell script and manage zip
+% files
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
 % Name of the shell file
 file_path = './ds000117-1.0.6.sh';
 
@@ -68,7 +69,6 @@ else
 end
 
 %% HELP FUNCTIONS
-
 % Function to download the selected images and manage zip copies
 function download_selected_images(urls, types, selected_type)
     % Filter the URLs based on the selected type
