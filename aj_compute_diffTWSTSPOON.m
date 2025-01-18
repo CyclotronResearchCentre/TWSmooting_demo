@@ -1,10 +1,14 @@
-% Main script to compare statistically TWS and TSPOON smoothing
+% Main script to compute the differences induced by the applied smoothing
+% approach. First, the differences between TWS and TSPOON quantitative maps
+% are computed for all qMRI parameters and tissues. Then a One-Sample
+% T-Test (second level GLM) is applied to these substracted maps. A F-Test
+% is applied to the intercept to get the regions affected by smoothing.
 %--------------------------------------------------------------------------
 % Copyright (C) 2017 Cyclotron Research Centre
 % Written by A.J.
 % Cyclotron Research Centre, University of Liege, Belgium
 %--------------------------------------------------------------------------
-%% create diff data 
+%% Create difference data: TWS - TSPOON 
 clear;clc;
 addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
 
@@ -23,17 +27,17 @@ TCs = {'GM', 'WM'};
 
 % Creating TWS and TSPOON patterns
 TWS_patterns = arrayfun(@(i, j) sprintf('^%s_%s.*%s\\.nii$', ...
-                        smoothing_methods{1}, TCs{i}, qMRI_params{j}), ...
-                        TCs_idx(:), qMRI_idx(:), 'UniformOutput', false);
+	smoothing_methods{1}, TCs{i}, qMRI_params{j}), ...
+	TCs_idx(:), qMRI_idx(:), 'UniformOutput', false);
 
 TSPOON_patterns = arrayfun(@(i, j) sprintf('^%s_%s.*%s\\.nii$', ...
-                        smoothing_methods{2}, TCs{i}, qMRI_params{j}), ...
-                        TCs_idx(:), qMRI_idx(:), 'UniformOutput', false);
+	smoothing_methods{2}, TCs{i}, qMRI_params{j}), ...
+	TCs_idx(:), qMRI_idx(:), 'UniformOutput', false);
 
 TWS_paths = cellfun(@(pattern) spm_select('FPListRec', TWS_dir, pattern), ...
-                    TWS_patterns, 'UniformOutput', false);
+	TWS_patterns, 'UniformOutput', false);
 TSPOON_paths = cellfun(@(pattern) spm_select('FPListRec', TSPOON_dir, pattern), ...
-                       TSPOON_patterns, 'UniformOutput', false);
+	TSPOON_patterns, 'UniformOutput', false);
 
 % Do the job 
 for i = 1:numel(TWS_paths)
@@ -41,7 +45,7 @@ for i = 1:numel(TWS_paths)
     TSPOON_files = cellstr(TSPOON_paths{i});
 
     if numel(TWS_files) ~= numel(TSPOON_files)
-        error('Le nombre de fichiers TWS et TSPOON ne correspond pas pour le motif %d.', i);
+        error('The number of TWS and TSPOON files does not match for the pattern %d.', i);
     end
 
     for ii = 1:numel(TWS_files)
@@ -75,11 +79,6 @@ disp('All files have been processed and saved.');
 spm_jobman('initcfg'); 
 spm('defaults', 'fmri');
 
-% Start parallel pool if not already open
-% if isempty(gcp('nocreate'))
-%     parpool; % Create a default parallel pool
-% end
-
 qMRI_params = {'MTsat', 'PDmap', 'R1map', 'R2starmap'};
 TCs = {'GM', 'WM'};
 
@@ -88,18 +87,18 @@ TCs = {'GM', 'WM'};
 
 % Creating searching and output patterns
 search_patterns = arrayfun(@(i, j) sprintf('^diff_%s.*%s\\.nii$', ...
-                        TCs{i}, qMRI_params{j}), ...
-                        TCs_idx(:), qMRI_idx(:), 'UniformOutput', false);
+	TCs{i}, qMRI_params{j}), ...
+	TCs_idx(:), qMRI_idx(:), 'UniformOutput', false);
 out_patterns = arrayfun(@(i, j) sprintf('diff_%s_%s', ...
-                        TCs{i}, qMRI_params{j}), ...
-                        TCs_idx(:), qMRI_idx(:), 'UniformOutput', false);
+	TCs{i}, qMRI_params{j}), ...
+	TCs_idx(:), qMRI_idx(:), 'UniformOutput', false);
                     
 ds_dir = 'D:\Master_Thesis\Data\BIDS_AgingData';
 input_dir = fullfile(ds_dir,'derivatives','AJ-Diff_TWSTSPOON');
 output_dir = fullfile(ds_dir,'derivatives','AJ-Diff_TWSTSPOON_GLM');
 
 for i = 1:numel(search_patterns)
-    jobfile = {'C:\Users\antoi\Documents\master_thesis\MATLAB\agingdata\aj_GLM_diffTWSTSPOON_job.m'};
+    jobfile = {'C:\Users\antoi\Documents\master_thesis\MATLAB\agingdata\compare_smoo\aj_GLM_diffTWSTSPOONGen_job.m'};
     
     inputs  = cell(2,1);
     % Output filename
@@ -109,5 +108,3 @@ for i = 1:numel(search_patterns)
     
     spm_jobman('run', jobfile, inputs{:});
 end
-
-% delete(gcp('nocreate'));
