@@ -1,15 +1,22 @@
 function [data_1D, data_2D] = aj_phantom_extract1D2D(ph, param, plot_fig)
-% aj_extract_data_from_phantom Extract 1D and 2D data from a 3D phantom
+%--------------------------------------------------------------------------
+% Function to extract 1D and 2D data from a 3D phantom
 %
-% INPUTS:
-% ph_var      : 3D phantom volume with noise and anatomical variability
+% INPUTS
+% ph          : 3D phantom volume with noise and anatomical variability
+% param       : Structure containing default parameters
 % plot_fig    : Flag to plot figures for visual comparison
 %
-% OUTPUTS:
+% OUTPUTS
 % data_1D     : 1D profile of the phantom (intensity values along a line)
 % data_2D     : 2D slice of the phantom (intensity values on a 2D plane)
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
 
-%% Default parameters
+%% Dealing with inputs
 if nargin < 2, plot_fig = false; end
 
 %% Extracting 1D & 2D data

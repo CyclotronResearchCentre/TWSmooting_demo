@@ -1,22 +1,23 @@
+%--------------------------------------------------------------------------
 % Main script to:   generate n 3D phantoms
 %                   extract 1D and 2D phantoms from the 3D ones
 %                   compute the probability map in 1D, 2D and 3D
 %                   compute the noisy probability map in 1D, 2D and 3D
 %                   save each individual phantom structure and nifti files
+%--------------------------------------------------------------------------
+% FUTURE DEV
+% extract 1d and 2d data also on proba maps -> only 3D ph runs
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
 
-%% Step 0: Cleaning stuff & SPM path
-close all;
-clear;
-clc;
-
-delete('ph_data_*.mat');
-delete('ph_3D_*.nii');
-delete('ph_proba_map_3D_*.nii');
-delete('ph_noisy_proba_map_3D_*.nii');
-
+% Cleaning environment & setting up SPM path
+close all; clear; clc;
 addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
 
-%% Step 1: Preprocessing
+ds_dir = 'D:\Master_Thesis\Data\InSilicoData';
 [model, param, flag] = aj_phantom_default();
 
 % Initialize storage for RMSE values
@@ -25,88 +26,76 @@ if param.n > 1 && flag.ph_stat
     index = 1;  % Initialize index for storing RMSE values
 end
 
-%% Step 2: Generating 'n' phantoms
-for ph_id = 1:param.n
-    fprintf('Processing phantom %d...\r', ph_id);
+% Custom phantom generation
+custom_model = model.(param.model_type)();
+ph_paths = cell(param.n,1);
+NoisyProbaMap_paths = cell(param.n,1);
+for i = 1:param.n
+    fprintf('Processing phantom %d...\r', i);
 
-    % Create the original 3D phantom
-    fprintf('Generating the original phantom...');
-    [phantom_3D, ellipse] = aj_phantom_create3D(model.(param.model_type)(), param);
-    fprintf(repmat('\b', 1, length('Generating the original phantom...')));
+    % Creating the original 3D phantom
+    phantom_3D = aj_phantom_create3D(custom_model,param);
     
-    % Add anatomical variability and noise
-    fprintf('Adding anatomical variability and noise...');
-    [anat_ph_3D, noisy_ph_3D, final_ph_3D, ellipse_anatomical] = ...
-        aj_phantom_variability(phantom_3D, ellipse, param, flag);
-    fprintf(repmat('\b', 1, length('Adding anatomical variability and noise...')));
-    
-    % Extract 1D and 2D data from the 3D phantom
-    fprintf('Extracting 1D and 2D phantom from the 3D...');
-    [final_ph_1D, final_ph_2D] = aj_phantom_extract1D2D(final_ph_3D, param, flag.plot_fig);
-    [anat_ph_1D, anat_ph_2D] = aj_phantom_extract1D2D(anat_ph_3D, param, false);
-    fprintf(repmat('\b', 1, length('Extracting 1D and 2D phantom from the 3D...')));
+    % Adding anatomical variability and noise
+    [anat_ph_3D, final_ph_3D] = aj_phantom_variability(phantom_3D, custom_model, param, flag);
     
     % Compute probability maps for each dimension
-    fprintf('Generating probability maps...');
-    proba_map_1D = aj_proba_maps(anat_ph_1D, param, flag);
-    proba_map_2D = aj_proba_maps(anat_ph_2D, param, flag);
     proba_map_3D = aj_proba_maps(anat_ph_3D, param, flag);
-    fprintf(repmat('\b', 1, length('Generating probability maps...')));
 
-    % Step 2.5: Add noise to the probability maps
-    fprintf('Adding noise to the probability maps...');
-    noisy_proba_map_1D = aj_proba_noise(proba_map_1D, param.proba_noise);
-    noisy_proba_map_2D = aj_proba_noise(proba_map_2D, param.proba_noise);
+    % Add noise to the probability maps
     noisy_proba_map_3D = aj_proba_noise(proba_map_3D, param.proba_noise);
-    fprintf(repmat('\b', 1, length('Adding noise to the probability maps...')));
     
-    % Step 2.6: Save results in a struct for each subject
-    fprintf('Saving results...');
-    ph_data.ph_1D = final_ph_1D;
-    ph_data.ph_2D = final_ph_2D;
-    ph_data.ph_3D = final_ph_3D;
+    fprintf(['Phantom ', num2str(i), ' processing complete.\n']);
     
-    ph_data.anat_ph_1D = anat_ph_1D;
-    ph_data.anat_ph_2D = anat_ph_2D;
-    ph_data.anat_ph_3D = anat_ph_3D;
+    % Save the subject data to nifti file
+    pth_out = fullfile(ds_dir, sprintf('sub-%02d',i), 'anat'); % try to BIDSify
+    if ~exist(pth_out,'dir')
+        mkdir(pth_out)
+    elseif flag.del_prevResults
+        delete(fullfile(pth_out,'sub-*.mat'));
+        delete(fullfile(pth_out,'sub-*.nii'));
+    end
     
-    ph_data.noisy_proba_map_1D = noisy_proba_map_1D;
-    ph_data.noisy_proba_map_2D = noisy_proba_map_2D;
-    ph_data.noisy_proba_map_3D = noisy_proba_map_3D;
-    fprintf(repmat('\b', 1, length('Saving results...')));
+    fprintf('Results are saved in %s\n', pth_out);
     
-    fprintf(['Phantom ', num2str(ph_id), ' processing complete.\n']);
-    
-    %% Step 2.7: Save the subject data to a separate .mat file
-    filename = sprintf('ph_data_%d.mat', ph_id);
-    save(filename, 'ph_data');
-    disp(['Data saved to ', filename]);
-    
-    %% Step 2.8: Save the 3D phantom and (noisy) probability maps as a NIFTI file
-    nifti_filename = sprintf('ph_3D_%d.nii', ph_id);
     V = struct();
-    V.fname = nifti_filename;
+    V.fname = fullfile(pth_out,sprintf('sub-%02d_3Dph.nii', i));
     V.dim = size(final_ph_3D);
-    V.dt = [spm_type('float32') 0];  % Data type
+    V.dt = [spm_type('float32') 0];
     V.mat = eye(4);  % Identity transformation matrix
-    spm_write_vol(V, final_ph_3D); % Write the volume to file
-    fprintf('Saved %s\n', nifti_filename);
+    V.descrip = 'Custom Phantom Generator: phantom';
+    spm_write_vol(V, final_ph_3D);
+    ph_paths{i} = V.fname;
     
-    nifti_filename = sprintf('ph_proba_map_3D_%d.nii', ph_id);
-    niftiwrite(proba_map_3D, nifti_filename);
-    disp(['Saved ', nifti_filename]);
+    TC_names = {'GM','WM','CSF','BoneSculpt'};
+    for ii = 1:size(noisy_proba_map_3D,4)
+        NoisyProbaMap_paths{i} = fullfile(pth_out,sprintf('sub-%02d_%s_ProbaMap.nii', i, TC_names{ii}));
+        niftiwrite(noisy_proba_map_3D(:,:,:,ii), NoisyProbaMap_paths{i}); 
+    end
     
-    noisy_nifti_filename = sprintf('ph_noisy_proba_map_3D_%d.nii', ph_id);
-    niftiwrite(noisy_proba_map_3D, noisy_nifti_filename);
-    disp(['Saved ', noisy_nifti_filename]);
+    % Extract 1D and 2D data from the 3D phantom
+    if flag.data_1D2D
+        [final_ph_1D, final_ph_2D] = aj_phantom_extract1D2D(final_ph_3D, param, flag.plot_fig);
+        [proba_map_1D, proba_map_2D] = aj_phantom_extract1D2D(proba_map_3D, param, false);
+        [noisy_proba_map_1D, noisy_proba_map_2D] = aj_phantom_extract1D2D(noisy_proba_map_3D, param, false);
     
-    %% Step 2.9: Compute RMSE values if more than one phantom exists
-    if param.n > 1 && ph_id > 1  && flag.ph_stat
+        % Save results in a struct for each subject
+        ph_data.ph_1D = final_ph_1D;
+        ph_data.ph_2D = final_ph_2D;
+        ph_data.anat_ph_1D = anat_ph_1D;
+        ph_data.anat_ph_2D = anat_ph_2D;
+        ph_data.noisy_proba_map_1D = noisy_proba_map_1D;
+        ph_data.noisy_proba_map_2D = noisy_proba_map_2D;
+        save(fullfile(pth_out,sprintf('sub-%02d_1D2Dph.mat', i)), 'ph_data');
+    end
+    
+    % Compute RMSE values if more than one phantom exists
+    if param.n > 1 && i > 1 && flag.ph_stat
         % Compute RMSE between the current phantom and all previous phantoms
-        for j = 1:ph_id-1
+        for j = 1:i-1
             previous_data = load(sprintf('ph_data_%d.mat', j));
             rmse_values(index) = aj_phantom_RMSE(anat_ph_3D, previous_data.ph_data.anat_ph_3D);
-            fprintf('RMSE between phantom %d and phantom %d: %.4f\n', ph_id, j, rmse_values(index));
+            fprintf('RMSE between phantom %d and phantom %d: %.4f\n', i, j, rmse_values(index));
             index = index + 1;
         end
     end
@@ -133,5 +122,3 @@ if param.n > 1 && flag.plot_ph_stat && flag.ph_stat
     std_rmse = std(rmse_values);
     fprintf('Mean RMSE: %.4f, Median RMSE: %.4f, Std Dev RMSE: %.4f\n', mean_rmse, median_rmse, std_rmse);
 end
-
-fprintf('Phantom generation completed.\n');

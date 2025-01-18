@@ -1,33 +1,42 @@
 function [model, param, flag] = aj_phantom_default()
-    %% Model Definitions: Available phantom models
-    model.shepp_logan = @shepp_logan;
-    model.modified_shepp_logan = @modified_shepp_logan;
-    model.yu_ye_wang = @yu_ye_wang;
-    
-    % Define default model type
-    param.model_type = 'modified_shepp_logan';  % Set default model
+%--------------------------------------------------------------------------
+% Function to get default parameters, flags and model
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
+% Model Definitions: Available phantom models
+model.shepp_logan = @shepp_logan;
+model.modified_shepp_logan = @modified_shepp_logan;
+model.yu_ye_wang = @yu_ye_wang;
 
-    %% Parameters Definitions: Default parameters for generating phantoms
-    param.n = 2;                    % Default number of phantoms to generate
-    param.grid_size = 128;          % Default grid size for 3D phantom
-    param.voxreal_res = 0.68;          % Resolution factor between the voxel size and the real size [mm/voxel]
-    param.modelreal_res = 1;        % Resolution factor between the model
-    
-    param.jitter_range = [0, 0.1];
-    param.jitter_factor = 0.05;     % Default jitter factor for anatomical variability
-    param.prenoise_level = 0.01;    % Noise to apply before smoothing if flag.noise_before_smoothing is true
-    param.sm_kern = 4;              % gaussian kernel size for smoothing (to get more realistic images)
-    param.noise_range = [0, 0.05];
-    param.noise_level = 0.02;       % Default noise level to add to phantoms
-    
-    param.proba_noise = 0.1;        % Noise level for probability maps
+% Define default model type
+param.model_type = 'modified_shepp_logan';  % Set default model
 
-    %% Flag: Used to manage additional behaviors
-    flag.noise_before_smoothing = false;    % Flag to apply noise before smoothing (and still apply noise after)
-    flag.plot_fig = false;                   % Flag to plot figures (set to true for plotting)
-    flag.ph_stat = false;                    % Flag to compute RMSE between phantoms (anat) if n>1
-    flag.plot_ph_stat = false;              % Flag to plot histogram and Q-Q plot of RMSE values (only if flag.ph_stat == true)
+% Parameters Definitions: Default parameters for generating phantoms
+param.n = 1;                    % Default number of phantoms to generate
+param.grid_size = 128;          % Default grid size for 3D phantom
+param.voxreal_res = 0.68;          % Resolution factor between the voxel size and the real size [mm/voxel]
+param.modelreal_res = 1;        % Resolution factor between the model
 
+param.jitter_range = [0, 0.1];
+param.jitter_factor = 0.05;     % Default jitter factor for anatomical variability
+param.prenoise_level = 0.01;    % Noise to apply before smoothing if flag.noise_before_smoothing is true
+param.fwhm = 5;                 % gaussian kernel size for smoothing (to get more realistic images)
+param.noise_range = [0, 0.05];
+param.noise_level = 0.02;       % Default noise level to add to phantoms
+
+param.proba_noise = 0.1;        % Noise level for probability maps
+
+% Flag: Used to manage additional behaviors
+flag.noise_before_smoothing = false;    % Flag to apply noise before smoothing (and still apply noise after)
+flag.plot_fig = false;                   % Flag to plot figures (set to true for plotting)
+flag.ph_stat = false;                    % Flag to compute RMSE between phantoms (anat) if n>1
+flag.plot_ph_stat = false;              % Flag to plot histogram and Q-Q plot of RMSE values (only if flag.ph_stat == true)
+
+flag.del_prevResults = true;
+flag.data_1D2D = false;
 end
 
 % A: Intensity (positive for adding intensity, negative for subtracting).

@@ -1,4 +1,4 @@
-function [ph, model] = aj_phantom_create3D(model, param)
+function ph = aj_phantom_create3D(model, param)
 % aj_create_phantom_3d Three-dimensional phantom
 %   P = aj_create_phantom_3d(DEF, N) generates a 3D phantom with size N and default types.
 %   DEF can be 'Shepp-Logan', 'Modified Shepp-Logan', 'Yu-Ye-Wang', or custom ellipsoids matrix.
@@ -6,12 +6,16 @@ function [ph, model] = aj_phantom_create3D(model, param)
 % INPUTS:
 %   model - String specifying phantom type: 'Shepp-Logan' or 'Modified
 %         Shepp-Logan' or 'Yu-Ye-Wang'.
-%   FOV_size   - Scalar specifying the grid size.
+%   param - Structure containing default parameters such as the grid size.
 % 
 % OUTPUT:
 %   ph      - Generated 3D phantom volume.
-%   model   - Matrix of ellipsoid parameters used to generate the phantom.
 %
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
 
 grid_size = param.grid_size;
 ph = zeros([grid_size, grid_size, grid_size], 'double');
@@ -48,30 +52,6 @@ end
 
 ph = reshape(ph, [grid_size, grid_size, grid_size]);  % Reshape to original 3D volume
 
-% % Visualize the original phantom
-% figure;
-% imagesc(squeeze(ph(:, :, round(size(ph, 1) / 2))), [min(ph(:)), max(ph(:))]);
-% title('Original Phantom in voxels');
-% colormap gray;
-% axis image;
-% set(gca, 'YDir', 'normal'); % imagesc: By default, displays the matrix so that the first row is at the top.
-% xlabel('X [voxel]');
-% ylabel('Y [voxel]');
-% 
-% % Converting the scale to millimeters for display
-% voxel_size = param.voxreal_res;          % Resolution factor between the voxel size and the real size [mm/voxel]
-% x_axis_mm = ((1:size(ph, 2)) - size(ph, 2)/2) * voxel_size;  % X axis in mm
-% y_axis_mm = ((1:size(ph, 1)) - size(ph, 1)/2) * voxel_size;  % Y axis in mm
-% 
-% % Visualization with scale in mm
-% figure;
-% imagesc(x_axis_mm, y_axis_mm, squeeze(ph(:, :, round(size(ph, 1) / 2))), [min(ph(:)), max(ph(:))]);
-% title('Original Phantom in mm');
-% colormap gray;
-% axis image;
-% set(gca, 'YDir', 'normal'); % imagesc: By default, displays the matrix so that the first row is at the top.
-% xlabel('X [mm]');
-% ylabel('Y [mm]');
 end
 
 %% Helper function: computes Euler rotation matrix
