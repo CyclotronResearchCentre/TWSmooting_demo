@@ -3,18 +3,14 @@ function [gs_imgaussfilt3_paths, gs_spm_paths] = aj_smooth_gaussian(MPM_paths, p
 % Function to apply standard Gaussian smoothing to 1D, 2D or 3D data.
 %
 % INPUTS
-% con_info: A structure array containing image volume information (from spm_vol) 
-%           of data to be smoothed
+% MPM_paths: A list containing paths to MPMs to smooth
 % pth_out:  Directory to save output files
-% param:    Smoothing parameters, including the width of smoothing kernel
-%           in mm (from default)
+% fwhm: Width of smoothing kernel in mm
 % dim:      Dimension of the data (1D, 2D or 3D)
 %
 % OUTPUTS
 % gsP_signal:       Gaussian smoothed signal from imgaussfilt3
 % gs_path:          Gaussian smoothed file path from spm_smooth
-%
-% REFERENCE ???
 %
 %--------------------------------------------------------------------------
 % 1D GAUSSIAN SMOOTHING
@@ -52,11 +48,6 @@ function [gs_imgaussfilt3_paths, gs_spm_paths] = aj_smooth_gaussian(MPM_paths, p
 % s     - [sx sy sz] Gaussian filter width {FWHM} in mm (or edges)
 % dtype - datatype [Default: 0 == same datatype as P]
 %--------------------------------------------------------------------------
-% NOTES
-% imgaussfilt3 tends to propagate Nan values >< spm_smooth where not finite
-% values are fixed to 0.0 in spm_con_vol.c (i.e. lines 22, 23).
-% https://github.com/spm/spm/blob/main/src/spm_conv_vol.c
-%--------------------------------------------------------------------------
 % Copyright (C) 2017 Cyclotron Research Centre
 % Written by A.J.
 % Cyclotron Research Centre, University of Liege, Belgium
@@ -65,12 +56,6 @@ function [gs_imgaussfilt3_paths, gs_spm_paths] = aj_smooth_gaussian(MPM_paths, p
 if nargin < 4
     warning('GS issue: not enough inputs.');
 end
-
-% if isvector(MPM_paths)
-%     nb_MPM = length(MPM_paths);
-% else
-%     warning('GS issue: con_info is not a vector (i.e. not specific to a subject).\n');
-% end
 
 % Generate Gaussian kernel
 wg = gausswin(fwhm);
@@ -94,16 +79,6 @@ switch dim
         for i = 1:nMPM
             gs_spm_paths{i} = spm_file(MPM_paths(i,:), 'prefix', 'spm_smooth_', 'path', pth_out);
             spm_smooth(MPM_paths(i,:), gs_spm_paths{i}, fwhm);
-%             hmri_proc_zero2nan(gs_spm_paths{i});
-%             aj_proc_thr2nan(gs_spm_paths{i}, 0.05);
-
-            % test imgaussfilt3, a matlab function => NaN absorption issue
-%             gsP_signal = imgaussfilt3(spm_read_vols(con_info{i}), 'FilterSize', param.sm_kern_gaussian);
-%             V_info = con_info{i}; % Copy the structure of the original file header
-%             output_filename = spm_file(V_info.fname, 'path', pth_out, 'prefix', ['imgaussfilt3', '_']);
-%             V_info.fname = output_filename;
-%             spm_write_vol(V_info, gsP_signal);
-%             gs_imgaussfilt3_paths{i} = V_info.fname;
         end
 
     otherwise

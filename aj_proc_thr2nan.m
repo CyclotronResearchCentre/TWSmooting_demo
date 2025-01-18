@@ -1,4 +1,11 @@
 function fn_out = aj_proc_thr2nan(fn_in, threshold)
+% Toy function to replace all values below a threshold contained in fn_in
+% to NaN.
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
 %% Prepare input/output
 % Images are overwritten so same output file names
 fn_out = fn_in;

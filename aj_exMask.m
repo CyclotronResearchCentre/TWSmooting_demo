@@ -98,7 +98,6 @@ else
     % case: one subject
     TC = cell(1, nTC);
     for i = 1:nTC
-        disp(char(TC_paths{i}));
         TC{i} = spm_read_vols(spm_vol(char(TC_paths{i})));
     end
 end
@@ -119,7 +118,7 @@ end
 %% Write NIfTI files for each mask
 exMask_paths = cell(1, nTC);
 for i = 1:nTC
-    exMask_info = spm_vol(TC_paths{i}); % Use original info for output header
+    exMask_info = spm_vol(char(TC_paths{i})); % Use original info for output header
     exMask_info.fname = spm_file(exMask_info.fname,'prefix','Mask_','path',pth_out);
     spm_write_vol(exMask_info, exmask{i});
     exMask_paths{i} = exMask_info.fname;

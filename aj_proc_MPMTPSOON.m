@@ -1,4 +1,4 @@
-function [fn_out,fn_smwc] = aj_proc_MPMTPSOON(fn_wMPM, fn_mwTC, fwhm, l_TC, pth_out)
+function [fn_out,fn_sMask] = aj_proc_MPMTPSOON(fn_wMPM, fn_mwTC, fwhm, l_TC, pth_out)
 %--------------------------------------------------------------------------
 % This function applies T-SPOON (Tissue-SPecific smOOthing cOmpensated) to 
 % multiple parametric and tissue class maps from a single subject. It 
@@ -9,7 +9,7 @@ function [fn_out,fn_smwc] = aj_proc_MPMTPSOON(fn_wMPM, fn_mwTC, fwhm, l_TC, pth_
 % FORMAT
 % [fn_out, fn_smwc] = aj_proc_MPMTPSOON(fn_wMPM, fn_mwTC, fwhm, l_TC, pth_out)
 % 
-% INPUT
+% INPUTS
 % - fn_wMPM : filenames (char array) of the warped MPM, i.e. the
 %             w*MT/R1/R2s/A.nii files
 % - fn_mwTC : filenames (char array) of the modulated warped tissue
@@ -18,11 +18,11 @@ function [fn_out,fn_smwc] = aj_proc_MPMTPSOON(fn_wMPM, fn_mwTC, fwhm, l_TC, pth_
 % - l_TC    : explicit list of tissue classes used [1:nTC by def.]
 % - pth_out : output path [empty by default -> same as input maps]
 % 
-% OUTPUT
+% OUTPUTS
 % - fn_out  :   Cell array (one cell per MPM) of filenames (char array) 
 %               containing the "TSPOON smoothed tissue specific MPMs".
-% - fn_smwc :   Char array of paths of smoothed modulated warped tissue 
-%               classes.
+% - fn_sMask:   Char array of paths of (non thresholded) smoothed masks of   
+%               modulated warped tissue classes.
 %
 % PROCESS:
 % 1. Checks and sets input parameters and paths.
@@ -47,14 +47,10 @@ function [fn_out,fn_smwc] = aj_proc_MPMTPSOON(fn_wMPM, fn_mwTC, fwhm, l_TC, pth_
 % Majority implies taking into account all the available tissue classes in
 % fn_mwTC.
 %--------------------------------------------------------------------------
-% FUTURE DEV
-% anat folder to put mask
-%--------------------------------------------------------------------------
 % Copyright (C) 2017 Cyclotron Research Centre
 % Written by A.J.
 % Cyclotron Research Centre, University of Liege, Belgium
 %--------------------------------------------------------------------------
-
 %% Deal with inputs
 % Check input
 if nargin<5, pth_out = []; end
@@ -123,7 +119,7 @@ thr_gs_Mask_gs_mwc_paths = cell(1,nTC);
 for jj = 1:nTC
     Vi = char(gs_Mask_gs_mwc_paths{jj});
     thr_gs_Mask_gs_mwc_paths{jj} = spm_file(gs_Mask_gs_mwc_paths{jj},'prefix','thr_','path',pth_out);
-    f = '(i1>.05)';
+    f = 'i1 .* (i1>.05)';
     spm_imcalc(Vi, thr_gs_Mask_gs_mwc_paths{jj}, f, ic_flag);
 
     % Set 0's to NaN for the types that have NaN representation
@@ -186,10 +182,10 @@ for ii=1:nMPM
     end
 end
 
-fn_smwc = char(gs_mwc_paths); % catch the smwTC images
+fn_sMask = char(gs_Mask_gs_mwc_paths); % catch the non thresholded smoothed masks of smwTC images
 
 % Delete unuseful files
-fn_2delete = char(char(Mask_gs_mwc_paths), char(gs_Mask_gs_mwc_paths), char(thr_gs_Mask_gs_mwc_paths));
+fn_2delete = char(char(Mask_gs_mwc_paths), char(gs_mwc_paths), char(thr_gs_Mask_gs_mwc_paths));
 for jj=1:size(fn_2delete,1)
     delete(deblank(fn_2delete(jj,:)));
 end

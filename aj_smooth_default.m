@@ -8,9 +8,9 @@ function [param, flag] = aj_smooth_default()
 %--------------------------------------------------------------------------
 
 % Parameters Definitions
-param.fwhm_gs = 3;  % Kernel width for Gaussian Smoothing (GS)
-param.fwhm_tws = 3;       % Kernel width for Tissue-Weighted Smoothing (TWS)
-param.fwhm_tspoon = 3;    % Kernel width for Tissue-SPecific smOOthing compeNsated (TSPOON)
+param.fwhm_gs = 5;          % Kernel width for Gaussian Smoothing (GS)
+param.fwhm_tws = 5;         % Kernel width for Tissue-Weighted Smoothing (TWS)
+param.fwhm_tspoon = 5;      % Kernel width for Tissue-SPecific smOOthing compeNsated (TSPOON)
 
 param.l_TC = (1:2);
 

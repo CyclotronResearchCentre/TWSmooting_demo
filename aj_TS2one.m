@@ -36,11 +36,6 @@ function final_img_info = aj_TS2one(x_paths, exMask_info, list_TC)
 %   conditions for combining images.
 % - The process may be limited by available memory for large images.
 %--------------------------------------------------------------------------
-% Debug shortcut
-% x_paths = tws_paths{1}; x_paths = x_info(1,:)
-% exMask_info = aj_exMask(mwTC_info(1,:), param, new_dir{1})
-% aj_TS2one(x_paths, exMask_info)
-%--------------------------------------------------------------------------
 % Copyright (C) 2017 Cyclotron Research Centre
 % Written by A.J.
 % Cyclotron Research Centre, University of Liege, Belgium
