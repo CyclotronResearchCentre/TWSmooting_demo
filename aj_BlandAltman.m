@@ -16,7 +16,7 @@ function [mean_diff,std_diff] = aj_BlandAltman(matrix3D_1, matrix3D_2, flag, pth
 % pth_out:      (optional) the output path where the Bland-Altman plot will
 %               be saved, if flag.savePlot is set to 1. If not specified, 
 %               the current working directory is used.
-% plot_title:   Just a char chain for plot title
+% plot_title:   (optional) just a char chain for plot title.
 %
 % OUTPUTS
 % mean_diff:    The mean of the differences between the two sets of measurements.
@@ -53,7 +53,10 @@ if nargin<3 || isempty(flag)
 end
 if nargin<4
     pth_out=pwd;
-    fprintf('Default output path: %s', pth_out);
+%     fprintf('Default output path: %s', pth_out);
+end
+if nargin<5
+    plot_title = 'Bland-Altman Plot';
 end
 if size(matrix3D_1) ~= size(matrix3D_2)
     error('The two input matrices have not the same size.');
@@ -146,8 +149,7 @@ if flag.drawPlot || flag.savePlot
     hold off;
     
     if flag.savePlot
-        exportgraphics(figureHandle, pth_out, 'Resolution', 300);  % High-resolution PNG
-%         exportgraphics(figureHandle, pth_out);  % EPS format
+        exportgraphics(figureHandle, pth_out, 'Resolution', 450); % file format defined in pth_out
     end
     if ~flag.drawPlot
         close(gcf);

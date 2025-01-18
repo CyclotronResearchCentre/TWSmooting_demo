@@ -67,6 +67,7 @@ end
 initial_dir = pwd;
 
 % Find all spmT_000x.nii and spmF_000x.nii files
+% sorted as : spmT_0001, spmT_0002, spmF_0003
 file_list = dir(fullfile(GLM_dir, 'spmT_*.nii'));
 file_list = [file_list; dir(fullfile(GLM_dir, 'spmF_*.nii'))];
 nContrasts = length(file_list);

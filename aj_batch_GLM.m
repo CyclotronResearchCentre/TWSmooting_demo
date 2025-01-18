@@ -1,8 +1,11 @@
-% Script to process smoothed results from published Callaghan dataset: 
-% AgingData (qMRI).
+% Script to process smoothed quantitative maps from published Callaghan
+% dataset: AgingData (qMRI).
 %
-% This processing follows the processing described in the article.
+% First the script creates the regressors files (age, TIV, scanner and
+% gender) before applying the GLM processing. This processing follows the
+% processing described in the article. 
 %
+%--------------------------------------------------------------------------
 % REFERENCES
 % M.F. Callaghan and al. (2014) http://dx.doi.org/10.1016/j.neurobiolaging.2014.02.008
 % https://hackmd.io/u_vOEzA8TzS1yGj52V6Txg
@@ -12,7 +15,6 @@
 % Written by A.J.
 % Cyclotron Research Centre, University of Liege, Belgium
 %--------------------------------------------------------------------------
-
 %% Create regressors files
 % Cleaning environment & setting up SPM path
 close all; clear; clc;
@@ -76,7 +78,6 @@ for i = 1:nfiles
     fprintf('Renamed: %s -> %s\n', original_file, new_file);
 end
 
-
 %% GLM on smoothed data
 % Cleaning environment & setting up SPM path
 clear;clc;
@@ -84,10 +85,10 @@ addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
 
 % Choose 'TSPOON', 'TWS' or 'TWsmoot'
 smoothing_method = {'TWsmoot', 'TWS', 'TSPOON'};
-meth = 1;
+meth = 3;
 
 % Paths to access to script, smoothed data and data
-script_dir = 'C:\Users\antoi\Documents\master_thesis\MATLAB\agingdata';
+script_dir = 'C:\Users\antoi\Documents\master_thesis\MATLAB\agingdata\reprod_article';
 ds_dir = 'D:\Master_Thesis\Data\BIDS_AgingData';
 if meth==1
     param.smoothName = smoothing_method{meth};
@@ -101,7 +102,6 @@ metrics_names = {'MTsat', 'PDmap', 'R1map', 'R2starmap'};
 nMetricsNames = length(metrics_names);
 TC_names = {'GM', 'WM'};
 nTCNames = length(TC_names);
-
 % Initialize SPM configuration
 spm_jobman('initcfg'); 
 spm('defaults', 'fmri');

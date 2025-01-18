@@ -56,7 +56,6 @@ for i = 1:nContrasts
     xSPM.Ex = 0;                    % Mask exclusion flag
     xSPM.thresDesc = 'FWE';         % Threshold description
     xSPM.u = 0.05;                  % Threshold (FWE-corrected p-value)
-%     xSPM.u = 0.001;               % Set p-value threshold to 0.001
     xSPM.k = 0;                     % Extent threshold
     
     % Call spm_getSPM to populate the xSPM structure

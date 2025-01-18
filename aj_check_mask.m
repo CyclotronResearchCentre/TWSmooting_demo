@@ -1,4 +1,18 @@
-
+% Toy script to check if the smoothed maps are well defined into the GM and
+% WM masks. These maps are smoothed according to three different smoothing
+% approaches: TWsmoot (originally smoothed using an old version of TWS, TWS
+% (from hMRI toolbox) and TSPOON (generalized version).
+%
+% Conclusion: The old version of TWS (from VBQ toolbox) smooths maps based
+% on subject-specific GM/WM masks. It doesn't use the TPM from SPM which
+% are used as additional condition in the new version of TWS (greater than
+% 5% of TPM)
+%
+%--------------------------------------------------------------------------
+% Copyright (C) 2017 Cyclotron Research Centre
+% Written by A.J.
+% Cyclotron Research Centre, University of Liege, Belgium
+%--------------------------------------------------------------------------
 %% Check if all MPM TC-specific contrasts are inside the GLM TC-specific mask spatial area
 addpath('C:\Users\antoi\Documents\master_thesis\MATLAB\spm12');
 

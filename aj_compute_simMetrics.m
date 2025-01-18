@@ -63,8 +63,8 @@ if ~isequal(size(Y1), size(Y2))
 end
 
 %% Threshold to create binary masks
-binary_mask1 = Y1 > 0; % Significant voxels in file 1
-binary_mask2 = Y2 > 0; % Significant voxels in file 2
+binary_mask1 = Y1 ~= 0; % Significant voxels in file 1
+binary_mask2 = Y2 ~= 0; % Significant voxels in file 2
 
 %% Compute the Jaccard Index
 intersection = nnz(binary_mask1 & binary_mask2); % Number of overlapping significant voxels
